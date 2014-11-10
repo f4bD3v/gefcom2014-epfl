@@ -1,4 +1,4 @@
 gefcom2014-epfl
 ===============
 
-Energy Load and Price Prediction for GEFCOM14
+Attempt at Energy Load (and Price) Prediction for GEFCOM14

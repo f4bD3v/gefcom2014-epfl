@@ -126,3 +126,11 @@ createTempHistos <- function(temp_series, filepath) {
     dev.off()
   }
 }
+
+appendToFile <- function(chr, fn) {
+  write(chr, file=fn, append=TRUE)
+}
+
+appendTableToFile <- function(df, fn) {
+  write.table(df, file=fn, quote=FALSE, append=TRUE, sep=",")
+}
