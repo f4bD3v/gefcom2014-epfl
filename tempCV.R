@@ -24,8 +24,9 @@ train.df <- createTrainDF(loadCSVs(in.path), getFirstDt(), getLastDt())
 temp.df <- reduceToTempDF(train.df)
 
 pca <- prcomp(temp.df[,-1], retx=TRUE, tol=0.2)
-pc1 <- pca$xavg.temp.series <- avgTempSeries(temp.df)
+pc1 <- pca$x
 
+avg.temp.series <- avgTempSeries(temp.df)
 avg.temp.list.yearly <- listSeriesByYear(avg.temp.series, "empm")
 avg.temp.yearly <- mergeSeriesByHour(avg.temp.list.yearly)
 avg.temp <- cbind(avg.temp.series, HASH=hashDtYear(avg.temp.series$TMS))
