@@ -40,7 +40,7 @@ test.start.dt <- addYears(getFirstDt(), 10)
 test.dt <- test.start.dt
 test.stop.dt <- subHours(addMonth(test.dt), 1)
 test.horizon <- 1 
-test.len <- 6
+test.len <- 7 
 
 # training set
 train.start.dt <- addYears(getFirstDt(), 2)
@@ -86,8 +86,8 @@ load.model.formulas <- list("s(CTEMP, k=24) + DAYT + s(HOUR, by=DAYT, k=24) + s(
 ### CROSSVALIDATION ###
 
 CV.res <- list()
-temp.features <- createTempFeatures(avg.temp, train.dt, train.horizon + test.horizon)
-load.features <- createLoadFeatures(load.df, train.dt, train.horizon + test.horizon)
+temp.features <- createTempFeatures(avg.temp, train.dt, train.horizon + test.len)
+load.features <- createLoadFeatures(load.df, train.dt, train.horizon + test.len)
 
 plots.path <- paste(out.path, "loadCVplots.pdf", sep="/")
 pdf(file=plots.path)
