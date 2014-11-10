@@ -107,14 +107,11 @@ for(k in 1:length(load.model.formulas)) {
     temp.load.pred.dt <- load.train.dt
     flex.horizon <- 3*12
     if(pred.traintemp) {
-      avg.temp <- avg.temp[-(avg.temp$HASH==hashDtYear(load.train.dt):length(avg.temp)), ]
+      avg.temp <- avg.temp[-((avg.temp$HASH==hashDtYear(load.train.dt)):length(avg.temp)), ]
       for (i in 1:load.train.horizon) {
         # increase training period with every month
         train.features <- getFeatures(features, temp.load.train.dt, flex.horizon)
         test.features <- getFeatures(features, temp.load.pred.dt, test.horizon)
-        if(model.formulas[[k]] != "mean") {
-    
-        }  
         temp.model <- trainTempModel(train.features, temp.model.formulas[[1]], temp.load.train.dt)
         test.fit <- predict.gam(temp.model, test.features[, -(1:2)])
         pred.stop.dt <- getStopDtByHorizon(temp.load.pred.dt, 1)
@@ -129,8 +126,8 @@ for(k in 1:length(load.model.formulas)) {
         else {
           target <- temp.features[index1:index2, 2]
         }  
-        index <- which(avg.temp$HASH == hashDtYear(temp.load.pred.dt), arr.ind = TRUE)  
-        if (length(index) != 0) avg.temp <- avg.temp[-c(index:nrow(avg.temp)),]
+        #index <- which(avg.temp$HASH == hashDtYear(temp.load.pred.dt), arr.ind = TRUE)  
+        #if (length(index) != 0) avg.temp <- avg.temp[-c(index:nrow(avg.temp)),]
         pred.temp <- fit
         avg.temp <- rbind(avg.temp, pred.temp)
         # Update

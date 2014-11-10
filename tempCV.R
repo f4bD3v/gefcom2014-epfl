@@ -6,6 +6,8 @@ source("models/load/load_model.R")
 source("models/load/temp/temp_model.R")
 source("models/load/feature_helpers.R")
 
+use.pca <- TRUE
+
 dir.exists <- function(path) FALSE
 # clear workspace: rm(list = ls(all = TRUE))
 in.path <- "data/load/train"
@@ -20,10 +22,18 @@ train.df <- createTrainDF(loadCSVs(in.path), getFirstDt(), getLastDt())
 
 ### PREPARE DATA ###
 temp.df <- reduceToTempDF(train.df)
-avg.temp.series <- avgTempSeries(temp.df)
+
+pca <- prcomp(temp.df[,-1], retx=TRUE, tol=0.2)
+pc1 <- pca$xavg.temp.series <- avgTempSeries(temp.df)
+
 avg.temp.list.yearly <- listSeriesByYear(avg.temp.series, "empm")
 avg.temp.yearly <- mergeSeriesByHour(avg.temp.list.yearly)
 avg.temp <- cbind(avg.temp.series, HASH=hashDtYear(avg.temp.series$TMS))
+
+pc.temp <- data.frame(TMS=avg.temp.series$TMS, MTEMP=pc1, HASH=hash)
+if(use.pca) {
+  avg.temp <- pc.temp
+}
 
 ### CROSSVALIDATION ###
 
