@@ -8,7 +8,7 @@ source("models/load/feature_helpers.R")
 
 dir.exists <- function(path) FALSE
 # clear workspace: rm(list = ls(all = TRUE))
-path <- "data/load/train"
+in.path <- "data/load/train"
 out.path <- "data/load/test/temp/CV"
 
 today <- as.character(Sys.Date())
@@ -17,8 +17,6 @@ if (!dir.exists(today.path)) dir.create(today.path, showWarnings = TRUE, recursi
 
 last.dt <- getLastDt()
 train.df <- createTrainDF(loadCSVs(in.path), getFirstDt(), getLastDt())
-last.dt <- getLastDt()
-train.df <- createTrainDF(loadCSVs(path), getFirstDt(), getLastDt())
 
 ### PREPARE DATA ###
 temp.df <- reduceToTempDF(train.df)
