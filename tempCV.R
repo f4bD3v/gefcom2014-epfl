@@ -6,6 +6,7 @@ source("models/load/load_model.R")
 source("models/load/temp/temp_model.R")
 source("models/load/feature_helpers.R")
 
+dir.exists <- function(path) FALSE
 # clear workspace: rm(list = ls(all = TRUE))
 path <- "data/load/train"
 out.path <- "data/load/test/temp/CV"
