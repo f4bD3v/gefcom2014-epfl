@@ -25,6 +25,8 @@ temp.df <- reduceToTempDF(train.df)
 
 pca <- prcomp(temp.df[,-1], retx=TRUE, tol=0.2)
 pc1 <- pca$x
+colnames(pc1) <- "MTEMP"
+print(tail(pc1))
 
 avg.temp.series <- avgTempSeries(temp.df)
 
@@ -35,6 +37,7 @@ avg.temp.yearly <- mergeSeriesByHour(avg.temp.list.yearly)
 avg.temp <- cbind(avg.temp.series, HASH=hash)
 
 pc.temp <- data.frame(TMS=avg.temp.series$TMS, MTEMP=pc1, HASH=hash)
+print(tail(pc.temp))
 if(use.pca) {
   avg.temp <- pc.temp
 }

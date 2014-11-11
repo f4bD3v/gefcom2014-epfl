@@ -61,21 +61,23 @@ out.path <- paste(test.path, as.character(train.horizon), as.character(load.trai
 if (!dir.exists(out.path)) dir.create(out.path, showWarnings = TRUE, recursive = TRUE, mode = "0777")
 
 # gam models
-temp.model.formulas <-list("WLAG52 + TOY + HOUR", 
-                      "WLAG5 + WLAG52 + TOY + HOUR",
-                      "WLAG52 + s(TOY, k=10) + s(HOUR, k=10)",
-                      "s(WLAG5, k=24) + s(WLAG52, k=24) + s(TOY, k=10) + s(HOUR, k=10)",
-                      "s(WLAG5, k=40) + s(WLAG52, k=10) + s(TOY, k=12) + s(HOUR, k=24)",
-                      "s(WLAG5, TOY, k=40) + s(WLAG52, k=24) + s(TOY, k=12) + s(HOUR, k=24)",
-                      "s(WLAG5, by=TOY, k=40) + s(WLAG52, k=24) + s(TOY, k=12) + s(HOUR, k=24)",
-                      "s(WLAG5, by=MONTH, k=40) + s(WLAG52, k=24) + s(TOY, k=12) + s(HOUR, k=24)",
-                      "s(WLAG52, k=24) + s(TOY, k=12) + s(HOUR, by=MONTH, k=24)")
+temp.model.formulas <-list("mean",
+                      "s(LAGM)",
+                      "s(LAGM) + s(LAGMD)",
+                      "s(LAGM) + s(LAGMD) + s(LAGSD)",
+                      "s(LAGM) + s(LAGMD) + s(LAGMAX) + s(LAGMIN)",
+                      "s(LAGM) + s(LAGMD) + s(LAGMAX) + s(LAGMIN) + s(LAGSD)",
+                      "s(LAGM) + s(LAGMD) + s(LAGMAX) + s(LAGMIN) + s(LAGSD)",
+                      "s(LAGM) + s(WLAG52, by=TOY, k=24) + s(HOUR, k=24)",
+                      "s(WLAG52, k=24) + s(TOY, k=52) + s(HOUR, k=24)",
+                      "s(WLAG5, k=24) + s(WLAG52, k=24) + s(TOY, k=52) + s(HOUR, k=24)",
+                      "s(LAGM) + s(LAGMD) + s(WLAG5, TOY, k=52)",
+                      "s(WLAG5, TOY, k=52) + s(WLAG52, k=24) + s(TOY, k=52) + s(HOUR, k=24)",
+                      "s(WLAG5, by=TOY, k=24) + s(WLAG52, k=24) + s(TOY, k=52) + s(HOUR, k=24)",
+                      "s(WLAG5, by=MONTH, k=24) + s(WLAG52, k=24) + s(TOY, k=52) + s(HOUR, k=24)")
 
-temp.model.formulas <- list("s(WLAG52, k=24) + s(TOY, k=12) + s(HOUR, by=MONTH, k=24)",
-                      "WLAG52 + s(TOY, k=10) + s(HOUR, k=10)",
-                      "WLAG52 + TOY + HOUR")
-
-temp.model.formulas <- list("s(WLAG5, TOY, k=52) + s(WLAG52, k=24) + s(TOY, k=52) + s(HOUR, k=24)")  
+temp.model.formulas <- list("mean")
+# What about mean feature?
 
 # with 5week lag, once without
 load.model.formulas <- list("s(CTEMP, k=24) + DAYT + s(HOUR, by=DAYT, k=24) + s(TOY, k=52) + s(WLAG5, TOY, k=52) + s(WLAG52, k=24)",
@@ -107,20 +109,29 @@ for(k in 1:length(load.model.formulas)) {
     temp.load.pred.dt <- load.train.dt
     flex.horizon <- 3*12
     if(pred.traintemp) {
-      avg.temp <- avg.temp[-((avg.temp$HASH==hashDtYear(load.train.dt)):length(avg.temp)), ]
-      for (i in 1:load.train.horizon) {
+      index <- which(avg.temp$HASH==hashDtYear(load.train.dt))
+      print(index)
+      avg.temp <- avg.temp[-c(index:length(avg.temp)), ]
+      for (h in 1:load.train.horizon) {
         # increase training period with every month
-        train.features <- getFeatures(features, temp.load.train.dt, flex.horizon)
-        test.features <- getFeatures(features, temp.load.pred.dt, test.horizon)
-        temp.model <- trainTempModel(train.features, temp.model.formulas[[1]], temp.load.train.dt)
-        test.fit <- predict.gam(temp.model, test.features[, -(1:2)])
+        train.features <- getFeatures(temp.features, temp.load.train.dt, flex.horizon)
+        test.features <- getFeatures(temp.features, temp.load.pred.dt, test.horizon)
+
         pred.stop.dt <- getStopDtByHorizon(temp.load.pred.dt, 1)
         test.dt.seq <- seq(temp.load.pred.dt, pred.stop.dt, by="hour")
-        fit <- data.frame(TMS=test.dt.seq, MTEMP=test.fit, HASH=hashDtYear(test.dt.seq))
-        #colnames(fit) <- colnames(avg.temp)
         index1 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[1], arr.ind=TRUE)
         index2 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[length(test.dt.seq)], arr.ind=TRUE)
-        if(temp.model.formulas[[k]] != "mean") {
+
+        if(temp.model.formulas[[i]] == "mean") {
+          test.fit <- temp.features[index1:index2, "LAGM"]      
+        }
+        else {
+          temp.model <- trainTempModel(train.features, temp.model.formulas[[i]], temp.load.train.dt)
+          test.fit <- predict.gam(temp.model, test.features[, -(1:2)])
+	}
+        fit <- data.frame(TMS=test.dt.seq, MTEMP=test.fit, HASH=hashDtYear(test.dt.seq))
+        #colnames(fit) <- colnames(avg.temp)
+        if(temp.model.formulas[[i]] != "mean") {
           target <- temp.features[index1:index2, "LAGM"]      
         }
         else {
@@ -139,15 +150,28 @@ for(k in 1:length(load.model.formulas)) {
       ### TEMPERATURE VALIDATION
       train.features <- getFeatures(temp.features, train.dt, train.horizon)
       test.features <- getFeatures(temp.features, test.dt, test.horizon)
-      temp.model <- trainTempModel(train.features, temp.model.formulas[[i]], train.dt)
-      test.fit <- predict.gam(temp.model, test.features[, -(1:2)])
+
       test.stop.dt <- getStopDtByHorizon(test.dt, 1)
       test.dt.seq <- seq(test.dt, test.stop.dt, by="hour")
-      fit <- data.frame(TMS=test.dt.seq, MTEMP=test.fit, HASH=hashDtYear(test.dt.seq))
-      #colnames(fit) <- colnames(avg.temp)
       index1 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[1], arr.ind=TRUE)
       index2 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[length(test.dt.seq)], arr.ind=TRUE)
-      target <- temp.features[index1:index2, 2]
+
+      if(temp.model.formulas[[i]] == "mean") {
+        test.fit <- temp.features[index1:index2, "LAGM"]      
+      }
+      else {
+        temp.model <- trainTempModel(train.features, temp.model.formulas[[i]], train.dt)
+        test.fit <- predict.gam(temp.model, test.features[, -(1:2)])
+      }
+      fit <- data.frame(TMS=test.dt.seq, MTEMP=test.fit, HASH=hashDtYear(test.dt.seq))
+      #colnames(fit) <- colnames(avg.temp)
+
+      if(temp.model.formulas[[i]] == "mean") {
+        target <- temp.features[index1:index2, "LAGM"]
+      }
+      else {
+        target <- temp.features[index1:index2, 2]
+      }
       plotTraining(test.dt.seq, target, fit$MTEMP, 0, xlabel=paste(as.character(test.dt), "1 month in hours", sep=" +"),
                    ylabel="Temperature in Fahrenheit", title=paste0("Temperature Model Validation, Model: ", temp.model.formulas[[i]]))
       
