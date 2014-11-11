@@ -111,8 +111,10 @@ for(k in 1:length(load.model.formulas)) {
     if(pred.traintemp) {
       index <- which(avg.temp$HASH==hashDtYear(load.train.dt))
       print(index)
-      avg.temp <- avg.temp[-c(index:length(avg.temp)), ]
-      for (h in 1:load.train.horizon) {
+      avg.temp <- avg.temp[-c(index:nrow(avg.temp)), ]
+      write.table(avg.temp, "test.csv")
+      for (h in 1:(load.train.horizon+test.len)) {
+        print(h)
         # increase training period with every month
         train.features <- getFeatures(temp.features, temp.load.train.dt, flex.horizon)
         test.features <- getFeatures(temp.features, temp.load.pred.dt, test.horizon)
@@ -128,7 +130,7 @@ for(k in 1:length(load.model.formulas)) {
         else {
           temp.model <- trainTempModel(train.features, temp.model.formulas[[i]], temp.load.train.dt)
           test.fit <- predict.gam(temp.model, test.features[, -(1:2)])
-	}
+        }
         fit <- data.frame(TMS=test.dt.seq, MTEMP=test.fit, HASH=hashDtYear(test.dt.seq))
         #colnames(fit) <- colnames(avg.temp)
         if(temp.model.formulas[[i]] != "mean") {
@@ -146,46 +148,49 @@ for(k in 1:length(load.model.formulas)) {
         flex.horizon <- flex.horizon + 1
       }
     }
+    print(tail(avg.temp))
     for (j in 1:test.len) {
       ### TEMPERATURE VALIDATION
-      train.features <- getFeatures(temp.features, train.dt, train.horizon)
-      test.features <- getFeatures(temp.features, test.dt, test.horizon)
-
-      test.stop.dt <- getStopDtByHorizon(test.dt, 1)
-      test.dt.seq <- seq(test.dt, test.stop.dt, by="hour")
-      index1 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[1], arr.ind=TRUE)
-      index2 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[length(test.dt.seq)], arr.ind=TRUE)
-
-      if(temp.model.formulas[[i]] == "mean") {
-        test.fit <- temp.features[index1:index2, "LAGM"]      
+      if (!pred.traintemp) {
+        train.features <- getFeatures(temp.features, train.dt, train.horizon)
+        test.features <- getFeatures(temp.features, test.dt, test.horizon)
+  
+        test.stop.dt <- getStopDtByHorizon(test.dt, 1)
+        test.dt.seq <- seq(test.dt, test.stop.dt, by="hour")
+        index1 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[1], arr.ind=TRUE)
+        index2 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[length(test.dt.seq)], arr.ind=TRUE)
+  
+        if(temp.model.formulas[[i]] == "mean") {
+          test.fit <- temp.features[index1:index2, "LAGM"]      
+        }
+        else {
+          temp.model <- trainTempModel(train.features, temp.model.formulas[[i]], train.dt)
+          test.fit <- predict.gam(temp.model, test.features[, -(1:2)])
+        }
+        fit <- data.frame(TMS=test.dt.seq, MTEMP=test.fit, HASH=hashDtYear(test.dt.seq))
+        #colnames(fit) <- colnames(avg.temp)
+  
+        if(temp.model.formulas[[i]] == "mean") {
+          target <- temp.features[index1:index2, "LAGM"]
+        }
+        else {
+          target <- temp.features[index1:index2, 2]
+        }
+        plotTraining(test.dt.seq, target, fit$MTEMP, 0, xlabel=paste(as.character(test.dt), "1 month in hours", sep=" +"),
+                     ylabel="Temperature in Fahrenheit", title=paste0("Temperature Model Validation, Model: ", temp.model.formulas[[i]]))
+        
+        if (test.dt < getLastDt() && pred.traintemp != TRUE) {
+          index <- which(avg.temp$HASH == hashDtYear(test.dt), arr.ind = TRUE)  
+          if (length(index) != 0) avg.temp <- avg.temp[-c(index:nrow(avg.temp)),]
+        }
+        
+        pred.temp <- fit
+        if (use.temp) {
+          pred.temp <- data.frame(TMS=test.dt.seq, MTEMP=target, HASH=hashDtYear(test.dt.seq))
+        }
+        avg.temp <- rbind(avg.temp, pred.temp)
       }
-      else {
-        temp.model <- trainTempModel(train.features, temp.model.formulas[[i]], train.dt)
-        test.fit <- predict.gam(temp.model, test.features[, -(1:2)])
-      }
-      fit <- data.frame(TMS=test.dt.seq, MTEMP=test.fit, HASH=hashDtYear(test.dt.seq))
-      #colnames(fit) <- colnames(avg.temp)
-
-      if(temp.model.formulas[[i]] == "mean") {
-        target <- temp.features[index1:index2, "LAGM"]
-      }
-      else {
-        target <- temp.features[index1:index2, 2]
-      }
-      plotTraining(test.dt.seq, target, fit$MTEMP, 0, xlabel=paste(as.character(test.dt), "1 month in hours", sep=" +"),
-                   ylabel="Temperature in Fahrenheit", title=paste0("Temperature Model Validation, Model: ", temp.model.formulas[[i]]))
-      
-      if (test.dt < getLastDt()) {
-        index <- which(avg.temp$HASH == hashDtYear(test.dt), arr.ind = TRUE)  
-        if (length(index) != 0) avg.temp <- avg.temp[-c(index:nrow(avg.temp)),]
-      }
-      
-      pred.temp <- fit
-      if (use.temp) {
-        pred.temp <- data.frame(TMS=test.dt.seq, MTEMP=target, HASH=hashDtYear(test.dt.seq))
-      }
-      avg.temp <- rbind(avg.temp, pred.temp)
-      
+        
       ### LOAD VALIDATION
       load.train.features <- assembleFeatures(load.features, avg.temp, load.train.dt, load.train.horizon)
       load.test.features <- assembleFeatures(load.features, avg.temp, test.dt, test.horizon)
