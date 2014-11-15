@@ -76,7 +76,7 @@ temp.model.formulas <-list("mean",
                       "s(WLAG5, by=TOY, k=24) + s(WLAG52, k=24) + s(TOY, k=52) + s(HOUR, k=24)",
                       "s(WLAG5, by=MONTH, k=24) + s(WLAG52, k=24) + s(TOY, k=52) + s(HOUR, k=24)")
 
-temp.model.formulas <- list("mean")
+#temp.model.formulas <- list("mean")
 # What about mean feature?
 
 # with 5week lag, once without
@@ -197,7 +197,7 @@ for(k in 1:length(load.model.formulas)) {
       
       train.result <- trainLoadModelFormula(load.train.features, load.model.formulas[[k]], train.dt)
       load.model <- train.result[["model"]]  
-      capture.output(summary(temp.model), file="load_models_CV.txt", append=TRUE)
+      capture.output(summary(load.model), file="load_models_CV.txt", append=TRUE)
       train.residuals <- train.result[["residuals"]]
       
       load.fit <- predict.gam(load.model, load.test.features[, -(1:2)])
