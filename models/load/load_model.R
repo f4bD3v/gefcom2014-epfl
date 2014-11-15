@@ -4,13 +4,15 @@ require(mgcv)
 getTempFeatures <- function(avg.temp.df, train.dt, horizon) {
   stop.dt <- getStopDtByHorizon(train.dt, horizon)
   index.seq <- calcSeqByIndex(nrow(avg.temp.df), getColIndex(avg.temp.df$HASH, train.dt, stop.dt))
+  print(index.seq)
   print(avg.temp.df[1, ])
   data.df <- avg.temp.df$MTEMP
   CTEMP <- data.df[index.seq] ### FEED TEMPERATURE OF PREVIOUS MONTH, previous year (365*24)
   for (i in 1:length(index.seq)) {
     index <- index.seq[i]
-    index.seq.last7d <- seq(index-720, index-1, 1)
-    mean.last7d <- mean(data.df[index.seq.last7d])
+    print(index)
+    #index.seq.last7d <- seq(index-720, index-1, 1)
+    #mean.last7d <- mean(data.df[index.seq.last7d])
     index.seq.last24h <- seq(index-24, index-1, 1)
     max.last24h <- max(data.df[index.seq.last24h])
     min.last24h <- min(data.df[index.seq.last24h])
@@ -22,7 +24,8 @@ getTempFeatures <- function(avg.temp.df, train.dt, horizon) {
     ### TODO: Always predict temperature for next 2 months!
     #index.seq.next8h <- seq(index+1, index+8, 1)
     #avg.temp.next8h <- mean(data.df[index.seq.next8h])
-    feature.row <- cbind(MTL7D=mean.last7d, MAXT24H=max.last24h, MINT24H=min.last24h, TM24H=temp_24h, TM48H=temp_48h, TM2H=temp_2h, TM1H=temp_1h)
+    #MTL7D=mean.last7d, 
+    feature.row <- cbind(MAXT24H=max.last24h, MINT24H=min.last24h, TM24H=temp_24h, TM48H=temp_48h, TM2H=temp_2h, TM1H=temp_1h)
     if (i == 1) features <- feature.row else features <- rbind(features, feature.row)
   }
   temp.features <- cbind(CTEMP, features)
@@ -57,10 +60,10 @@ createLoadFeatures <- function(load.df, start.dt, horizon) {
   return(features)
 }
 
-getLoadFeatures <- function(data.df, start.dt, horizon) {
+getLoadFeatures <- function(data.df, start.dt, horizon, htype) {
   print(paste0("getLoadFeatures",start.dt))
   
-  stop.dt <- getStopDtByHorizon(start.dt, horizon)
+  stop.dt <- getStopDtByHorizon(start.dt, horizon, htype)
   dt.seq.target <- seq(from=start.dt, to=stop.dt, by="hour")
   
   nrows <- nrow(data.df)
@@ -73,23 +76,26 @@ getLoadFeatures <- function(data.df, start.dt, horizon) {
     print(target)
   }
   
-  weeks5.lag.seq <- index.seq.target - (5*7*24)
+  offset <- 0
+  if(htype == 0) offset <- horizon * 24 else if(htype == 1) offset <- horizon * 7 * 24 else offset <- 5 * 7 * 24
+  days.lag.seq <- index.seq.target - offset
+  
   weeks52.lag.seq <- index.seq.target - (52*7*24)
   
-  weeks5.lag <- data.df$LOAD[weeks5.lag.seq]
+  days.lag <- data.df$LOAD[days.lag.seq]
   weeks52.lag <- data.df$LOAD[weeks52.lag.seq]
   
   time.of.year <- data.df$TOY[index.seq.target] 
   daytype <- data.df$DAYT[index.seq.target] 
   hour <- data.df$HOUR[index.seq.target] 
 
-  return(list(TMS=dt.seq.target, Y=target, WLAG5=weeks5.lag, WLAG52=weeks52.lag, TOY=time.of.year, DAYT=daytype, HOUR=hour))
+  return(list(TMS=dt.seq.target, Y=target, DLAG=days.lag, WLAG52=weeks52.lag, TOY=time.of.year, DAYT=daytype, HOUR=hour))
 }  
 
-assembleFeatures <- function(load.features, avg.temp, start.dt, horizon) {
+assembleFeatures <- function(load.features, avg.temp, start.dt, horizon, htype) {
   # ofset 0 instead of 4 bc load df starts at 2001 with NAs
   temp.features <- getTempFeatures(avg.temp, start.dt, horizon)
-  load.feature.list <- getLoadFeatures(load.features, start.dt, horizon)
+  load.feature.list <- getLoadFeatures(load.features, start.dt, horizon, htype)
   load.features <- do.call(cbind.data.frame, load.feature.list)
   feature.df <- cbind(load.features, temp.features)
   return(feature.df)
@@ -102,7 +108,8 @@ getLoadFormula <- function(target.var, model.vars) {
   # "y ~ x1 + x2 + x3"
   str.formula <- paste(target.var, paste(model.vars, collapse=") + s("), sep=" ~ ")
   str.formula <- paste0(target.var, " ~ ",
-                        "s(CTEMP, k=24) + DAYT + s(HOUR, by=DAYT, k=24) + s(TOY, k=52) + s(WLAG5, TOY, k=52) + s(WLAG52, k=24)")
+                        "s(CTEMP, HOUR, k=24) + DAYT + s(HOUR, by=DAYT, k=24) + s(TOY, k=52) + s(DLAG, TOY, k=52) + s(WLAG52, k=24)")
+                        #"s(CTEMP, k=24) + DAYT + s(HOUR, by=DAYT, k=24) + s(TOY, k=52) + s(WLAG5, TOY, k=52) + s(WLAG52, k=24)")
                         #s(CTEMP, k=24) +
                         #"DAYT + s(HOUR, by=DAYT, k=24) + s(TOY, k=52) + s(WLAG52, k=24)")# + ",
                         #"s(MTL7D) + s(MAXT24H) + s(MINT24H) + s(TM24H) + s(TM48H) + s(TM2H) + s(TM1H)")
