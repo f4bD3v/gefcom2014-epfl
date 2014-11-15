@@ -31,13 +31,10 @@ plotPredictionQuantiles <- function(tms, target, fit, fit.quantiles, chunks, xla
   fitq.chunks <- matrixToChunks(fit.quantiles, chunks)
   tms.chunks <- listToChunks(tms, chunks)
   
-  print(target.chunks[[1]])
-  print(fit.chunks[[1]])
-  q.seq <- union(c(1),seq(0,ncol(fit.quantiles),9)[-1])
-  print(q.seq)
+  #q.seq <- union(c(1),seq(0,ncol(fit.quantiles),9)[-1])
   for(k in 1:chunks) {
-    plot(fit.chunks[[k]] ~ tms.chunks[[k]], col="white", type="l", xlab=xlabel, ylab=ylabel, main=title)  
-    for (i in q.seq) {
+    plot(fit.chunks[[k]] ~ tms.chunks[[k]], col="white", type="l", ylim=c(40, 320), xlab=xlabel, ylab=ylabel, main=title)  
+    for (i in 1:ncol(fit.quantiles)) {
       lines(fitq.chunks[[k]][, i] ~ tms.chunks[[k]], col="yellow", type="l")
     }
     # lw - line width

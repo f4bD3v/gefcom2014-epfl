@@ -14,7 +14,7 @@ getBeforeLastDt <- function() {
 }
 
 getLastDt <- function() {
-  last.dt <- as.POSIXct("08/01/2011 00:00", format="%m/%d/%Y %H:%M", tz="EST")
+  last.dt <- as.POSIXct("09/01/2011 00:00", format="%m/%d/%Y %H:%M", tz="EST")
   return(last.dt)
 }
 
@@ -69,9 +69,16 @@ getUSHolidays <- function(dt) {
   return(as.character(holidays))
 }
 
-getStopDtByHorizon <- function(start.dt, months) {
-  stop.dt <- subHours(addMonths(start.dt, months), 1)
-  return(stop.dt)
+getStopDtByHorizon <- function(start.dt, units, htype=2) {
+  if(htype == 0) {
+    stop.dt <- addDays(start.dt, units)
+  } else if (htype == 1) {
+    stop.dt <- addWeeks(start.dt, units)
+  } else {
+    stop.dt <- addMonths(start.dt, units)  
+  }
+  return.dt <- subHours(stop.dt, 1)
+  return(return.dt)
 } 
 
 addDays <- function(dt, n) {
@@ -81,6 +88,11 @@ addDays <- function(dt, n) {
 
 subDays <- function(dt, n) {
   ndt <- dt - days(n)
+  return(ndt)
+}
+
+addWeeks <- function(dt, n) {
+  ndt <- dt + weeks(n)
   return(ndt)
 }
 

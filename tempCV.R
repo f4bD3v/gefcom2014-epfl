@@ -37,10 +37,7 @@ avg.temp.yearly <- mergeSeriesByHour(avg.temp.list.yearly)
 avg.temp <- cbind(avg.temp.series, HASH=hash)
 
 pc.temp <- data.frame(TMS=avg.temp.series$TMS, MTEMP=pc1, HASH=hash)
-print(tail(pc.temp))
-if(use.pca) {
-  avg.temp <- pc.temp
-}
+if(use.pca) avg.temp <- pc.temp
 
 ### CROSSVALIDATION ###
 

@@ -6,13 +6,26 @@ source("models/load/load_model.R")
 source("models/load/temp/temp_model.R")
 source("models/load/feature_helpers.R")
 
+### call: Rscript loadCV.R --args [#model]
+
+num.model <- commandArgs(TRUE)[-1][1]
+k <- num.model
+
 dir.exists <- function(path) FALSE
 
 # clear workspace: rm(list = ls(all = TRUE))
+
+use.temp = FALSE
+use.pca = FALSE
+use.temp1 = FALSE
+pred.traintemp = TRUE
+
 in.path <- "data/load/train"
 out.path <- "data/load/test/CV"
 
 today <- as.character(Sys.Date())
+if(pred.traintemp) today <- paste0(today, "_train_pred")
+if(use.pca) today <- paste0(today, "_pca") else if(use.temp1) today <- paste0(today, "_temp1")
 today.path <- paste(out.path, today, sep="/")
 if (!dir.exists(today.path)) dir.create(today.path, showWarnings = TRUE, recursive = FALSE, mode = "0777")
 
@@ -21,17 +34,21 @@ train.df <- createTrainDF(loadCSVs(in.path), getFirstDt(), getLastDt())
 
 ### PREPARE DATA ###
 temp.df <- reduceToTempDF(train.df)
+if (use.temp1) temp.df <- temp.df[ ,c(1,2)]
 avg.temp.series <- avgTempSeries(temp.df)
 avg.temp.list.yearly <- listSeriesByYear(avg.temp.series, "empm")
 avg.temp.yearly <- mergeSeriesByHour(avg.temp.list.yearly)
 avg.temp <- cbind(avg.temp.series, HASH=hashDtYear(avg.temp.series$TMS))
 
-load.df <- na.omit(reduceToLoadDF(train.df)) # remove first years of NA values 
-hash = hashDtYear(load.df$TMS)
-load.df <- cbind(load.df, HASH=hash)
+pca <- prcomp(temp.df[,-1], retx=TRUE, tol=0.2)
+pc1 <- pca$x
+colnames(pc1) <- "MTEMP"
+pc.temp <- data.frame(TMS=avg.temp.series$TMS, MTEMP=pc1, HASH=hash)
+if(use.pca) avg.temp <- pc.temp
 
-use.temp = FALSE
-pred.traintemp = TRUE
+load.df <- na.omit(reduceToLoadDF(train.df)) # remove first years of NA values 
+hash <- hashDtYear(load.df$TMS)
+load.df <- cbind(load.df, HASH=hash)
 
 ### DEFINE DATES & HORIZON ###
 
@@ -40,7 +57,7 @@ test.start.dt <- addYears(getFirstDt(), 10)
 test.dt <- test.start.dt
 test.stop.dt <- subHours(addMonth(test.dt), 1)
 test.horizon <- 1 
-test.len <- 7 
+test.len <- 8
 
 # training set
 train.start.dt <- addYears(getFirstDt(), 2)
@@ -91,148 +108,153 @@ CV.res <- list()
 temp.features <- createTempFeatures(avg.temp, train.dt, train.horizon + test.len)
 load.features <- createLoadFeatures(load.df, train.dt, train.horizon + test.len)
 
-plots.path <- paste(out.path, "loadCVplots.pdf", sep="/")
-pdf(file=plots.path)
-output.file <- paste(out.path, "loadCVlog.csv", sep="/")
-for(k in 1:length(load.model.formulas)) {
-  load.model.chr <- paste0("Load Model ", k, ": ", load.model.formulas[[k]])
-  load.train.chr <- paste0("Load Model train horizon: ", load.train.horizon)
-  appendToFile(load.model.chr, output.file)
-  appendToFile(load.train.chr, output.file)
-  
-  for(i in 1:length(temp.model.formulas)) {
-    temp.model.chr <- paste0("Temp Model ", i, ": ", temp.model.formulas[[i]])
-    temp.train.chr <- paste0("Temp Model train horizon", train.horizon)
-    appendToFile(temp.model.chr, output.file)
-    appendToFile(temp.train.chr, output.file)
-    temp.load.train.dt <- train.dt
-    temp.load.pred.dt <- load.train.dt
-    flex.horizon <- 3*12
-    if(pred.traintemp) {
-      index <- which(avg.temp$HASH==hashDtYear(load.train.dt))
-      print(index)
-      avg.temp <- avg.temp[-c(index:nrow(avg.temp)), ]
-      write.table(avg.temp, "test.csv")
-      for (h in 1:(load.train.horizon+test.len)) {
-        print(h)
-        # increase training period with every month
-        train.features <- getFeatures(temp.features, temp.load.train.dt, flex.horizon)
-        test.features <- getFeatures(temp.features, temp.load.pred.dt, test.horizon)
+fn <- paste("loadCV", k, "_")
+fn.pdf <- paste0(fn, "_plots.pdf")
+fn.csv <- paste0(fn, "_results.csv")
+plots.path <- paste(out.path, fn.pdf, sep="/")
+pdf(file=plots.path, width=8, height=11)
+par(mfrow=c(3,1))
+output.file <- paste(out.path, fn.csv, sep="/")
 
-        pred.stop.dt <- getStopDtByHorizon(temp.load.pred.dt, 1)
-        test.dt.seq <- seq(temp.load.pred.dt, pred.stop.dt, by="hour")
-        index1 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[1], arr.ind=TRUE)
-        index2 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[length(test.dt.seq)], arr.ind=TRUE)
+#for(k in 1:length(load.model.formulas)) {
+load.model.chr <- paste0("Load Model ", k, ": ", load.model.formulas[[k]])
+load.train.chr <- paste0("Load Model train horizon: ", load.train.horizon)
+appendToFile(load.model.chr, output.file)
+appendToFile(load.train.chr, output.file)
 
-        if(temp.model.formulas[[i]] == "mean") {
-          test.fit <- temp.features[index1:index2, "LAGM"]      
-        }
-        else {
-          temp.model <- trainTempModel(train.features, temp.model.formulas[[i]], temp.load.train.dt)
-          test.fit <- predict.gam(temp.model, test.features[, -(1:2)])
-        }
-        fit <- data.frame(TMS=test.dt.seq, MTEMP=test.fit, HASH=hashDtYear(test.dt.seq))
-        #colnames(fit) <- colnames(avg.temp)
-        if(temp.model.formulas[[i]] != "mean") {
-          target <- temp.features[index1:index2, "LAGM"]      
-        }
-        else {
-          target <- temp.features[index1:index2, 2]
-        }  
-        #index <- which(avg.temp$HASH == hashDtYear(temp.load.pred.dt), arr.ind = TRUE)  
-        #if (length(index) != 0) avg.temp <- avg.temp[-c(index:nrow(avg.temp)),]
-        pred.temp <- fit
-        avg.temp <- rbind(avg.temp, pred.temp)
-        # Update
-        temp.load.pred.dt <- addMonth(temp.load.pred.dt)
-        flex.horizon <- flex.horizon + 1
+for(i in 1:length(temp.model.formulas)) {
+  temp.model.chr <- paste0("Temp Model ", i, ": ", temp.model.formulas[[i]])
+  temp.train.chr <- paste0("Temp Model train horizon", train.horizon)
+  appendToFile(temp.model.chr, output.file)
+  appendToFile(temp.train.chr, output.file)
+  temp.load.train.dt <- train.dt
+  temp.load.pred.dt <- load.train.dt
+  flex.horizon <- 3*12
+  if(pred.traintemp) {
+    index <- which(avg.temp$HASH==hashDtYear(load.train.dt))
+    print(index)
+    avg.temp <- avg.temp[-c(index:nrow(avg.temp)), ]
+    write.table(avg.temp, "test.csv")
+    for (h in 1:(load.train.horizon+test.len)) {
+      print(h)
+      # increase training period with every month
+      train.features <- getFeatures(temp.features, temp.load.train.dt, flex.horizon)
+      test.features <- getFeatures(temp.features, temp.load.pred.dt, test.horizon)
+      
+      pred.stop.dt <- getStopDtByHorizon(temp.load.pred.dt, 1)
+      test.dt.seq <- seq(temp.load.pred.dt, pred.stop.dt, by="hour")
+      index1 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[1], arr.ind=TRUE)
+      index2 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[length(test.dt.seq)], arr.ind=TRUE)
+      
+      if(temp.model.formulas[[i]] == "mean") {
+        test.fit <- temp.features[index1:index2, "LAGM"]      
       }
-    }
-    print(tail(avg.temp))
-    for (j in 1:test.len) {
-      ### TEMPERATURE VALIDATION
-      if (!pred.traintemp) {
-        train.features <- getFeatures(temp.features, train.dt, train.horizon)
-        test.features <- getFeatures(temp.features, test.dt, test.horizon)
-  
-        test.stop.dt <- getStopDtByHorizon(test.dt, 1)
-        test.dt.seq <- seq(test.dt, test.stop.dt, by="hour")
-        index1 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[1], arr.ind=TRUE)
-        index2 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[length(test.dt.seq)], arr.ind=TRUE)
-  
-        if(temp.model.formulas[[i]] == "mean") {
-          test.fit <- temp.features[index1:index2, "LAGM"]      
-        }
-        else {
-          temp.model <- trainTempModel(train.features, temp.model.formulas[[i]], train.dt)
-          test.fit <- predict.gam(temp.model, test.features[, -(1:2)])
-        }
-        fit <- data.frame(TMS=test.dt.seq, MTEMP=test.fit, HASH=hashDtYear(test.dt.seq))
-        #colnames(fit) <- colnames(avg.temp)
-  
-        if(temp.model.formulas[[i]] == "mean") {
-          target <- temp.features[index1:index2, "LAGM"]
-        }
-        else {
-          target <- temp.features[index1:index2, 2]
-        }
-        plotTraining(test.dt.seq, target, fit$MTEMP, 0, xlabel=paste(as.character(test.dt), "1 month in hours", sep=" +"),
-                     ylabel="Temperature in Fahrenheit", title=paste0("Temperature Model Validation, Model: ", temp.model.formulas[[i]]))
-        
-        if (test.dt < getLastDt() && pred.traintemp != TRUE) {
-          index <- which(avg.temp$HASH == hashDtYear(test.dt), arr.ind = TRUE)  
-          if (length(index) != 0) avg.temp <- avg.temp[-c(index:nrow(avg.temp)),]
-        }
-        
-        pred.temp <- fit
-        if (use.temp) {
-          pred.temp <- data.frame(TMS=test.dt.seq, MTEMP=target, HASH=hashDtYear(test.dt.seq))
-        }
-        avg.temp <- rbind(avg.temp, pred.temp)
+      else {
+        temp.model <- trainTempModel(train.features, temp.model.formulas[[i]], temp.load.train.dt)
+        test.fit <- predict.gam(temp.model, test.features[, -(1:2)])
       }
-        
-      ### LOAD VALIDATION
-      load.train.features <- assembleFeatures(load.features, avg.temp, load.train.dt, load.train.horizon)
-      load.test.features <- assembleFeatures(load.features, avg.temp, test.dt, test.horizon)
-      
-      train.result <- trainLoadModelFormula(load.train.features, load.model.formulas[[k]], train.dt)
-      load.model <- train.result[["model"]]  
-      capture.output(summary(temp.model), file="load_models_CV.txt", append=TRUE)
-      train.residuals <- train.result[["residuals"]]
-      
-      load.fit <- predict.gam(load.model, load.test.features[, -(1:2)])
-      err.measures <- pointErrorMeasures(load.test.features$Y, load.fit)
-      # add train error quantiles to point prediction
-      test.quantiles <- createPredQuantiles(load.fit, train.residuals)
-      ### create several plots, one for every week
-      plotPredictionQuantiles(load.test.features$TMS, load.test.features$Y, load.fit, test.quantiles, 4,
-                              paste0(test.dt, " + 1 month in hours"), "load in MW", "Plot of Percentiles")
-      
-      # use hash instead of TMS?
-      tms.row <- cbind(TRAIN.TMS=as.character(train.dt), TEST.TMS=as.character(test.dt))
-      err.row <- cbind(do.call(cbind.data.frame, err.measures), PINBALL=pinball(test.quantiles, load.test.features$Y))
-      res.row <- cbind(tms.row, err.row)
-      if (j == 1) res <- res.row else res <- rbind(res, res.row)
-      
+      fit <- data.frame(TMS=test.dt.seq, MTEMP=test.fit, HASH=hashDtYear(test.dt.seq))
+      #colnames(fit) <- colnames(avg.temp)
+      if(temp.model.formulas[[i]] != "mean") {
+        target <- temp.features[index1:index2, "LAGM"]      
+      }
+      else {
+        target <- temp.features[index1:index2, 2]
+      }  
+      #index <- which(avg.temp$HASH == hashDtYear(temp.load.pred.dt), arr.ind = TRUE)  
+      #if (length(index) != 0) avg.temp <- avg.temp[-c(index:nrow(avg.temp)),]
+      pred.temp <- fit
+      avg.temp <- rbind(avg.temp, pred.temp)
       # Update
-      train.dt <- addMonth(train.dt)
-      print(paste0("traindt",train.dt))
-      test.dt <- addMonth(test.dt)
-      print(paste0("testdt",test.dt))
-      load.train.dt <- addMonth(load.train.dt)
-      print(paste0("traindt",load.train.dt))
+      temp.load.pred.dt <- addMonth(temp.load.pred.dt)
+      flex.horizon <- flex.horizon + 1
     }
-    res.final.row <- cbind(TRAIN.TMS=as.character(test.start.dt), TEST.TMS=as.character(addMonth(subHours(test.dt, 1))), RMSE=mean(res$RMSE), MAE=mean(res$MAE), MAPE=mean(res$MAPE), PINBALL=mean(res$PINBALL))
-    res <- rbind(res, res.final.row)
-    row.names(res) <- c(c(1:test.len), "MODEL CV MEAN")
-    appendTableToFile(res, output.file)
-    
-    train.dt <- train.start.dt
-    test.dt <- test.start.dt
-    load.train.dt <- load.train.start.dt
-    
-    CV.res[[k]] <- res
   }
-  appendToFile("\n", output.file)
+  print(tail(avg.temp))
+  for (j in 1:test.len) {
+    ### TEMPERATURE VALIDATION
+    if (!pred.traintemp) {
+      train.features <- getFeatures(temp.features, train.dt, train.horizon)
+      test.features <- getFeatures(temp.features, test.dt, test.horizon)
+      
+      test.stop.dt <- getStopDtByHorizon(test.dt, 1)
+      test.dt.seq <- seq(test.dt, test.stop.dt, by="hour")
+      index1 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[1], arr.ind=TRUE)
+      index2 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[length(test.dt.seq)], arr.ind=TRUE)
+      
+      if(temp.model.formulas[[i]] == "mean") {
+        test.fit <- temp.features[index1:index2, "LAGM"]      
+      }
+      else {
+        temp.model <- trainTempModel(train.features, temp.model.formulas[[i]], train.dt)
+        test.fit <- predict.gam(temp.model, test.features[, -(1:2)])
+      }
+      fit <- data.frame(TMS=test.dt.seq, MTEMP=test.fit, HASH=hashDtYear(test.dt.seq))
+      #colnames(fit) <- colnames(avg.temp)
+      
+      if(temp.model.formulas[[i]] == "mean") {
+        target <- temp.features[index1:index2, "LAGM"]
+      }
+      else {
+        target <- temp.features[index1:index2, 2]
+      }
+      plotTraining(test.dt.seq, target, fit$MTEMP, 0, xlabel=paste(as.character(test.dt), "1 month in hours", sep=" +"),
+                   ylabel="Temperature in Fahrenheit", title=paste0("Temperature Model Validation, Model: ", temp.model.formulas[[i]]))
+      
+      if (test.dt < getLastDt() && pred.traintemp != TRUE) {
+        index <- which(avg.temp$HASH == hashDtYear(test.dt), arr.ind = TRUE)  
+        if (length(index) != 0) avg.temp <- avg.temp[-c(index:nrow(avg.temp)),]
+      }
+      
+      pred.temp <- fit
+      if (use.temp) {
+        pred.temp <- data.frame(TMS=test.dt.seq, MTEMP=target, HASH=hashDtYear(test.dt.seq))
+      }
+      avg.temp <- rbind(avg.temp, pred.temp)
+    }
+    
+    ### LOAD VALIDATION
+    load.train.features <- assembleFeatures(load.features, avg.temp, load.train.dt, load.train.horizon)
+    load.test.features <- assembleFeatures(load.features, avg.temp, test.dt, test.horizon)
+    
+    train.result <- trainLoadModelFormula(load.train.features, load.model.formulas[[k]], train.dt)
+    load.model <- train.result[["model"]]  
+    capture.output(summary(load.model), file="load_models_CV.txt", append=TRUE)
+    train.residuals <- train.result[["residuals"]]
+    
+    load.fit <- predict.gam(load.model, load.test.features[, -(1:2)])
+    err.measures <- pointErrorMeasures(load.test.features$Y, load.fit)
+    # add train error quantiles to point prediction
+    test.quantiles <- createPredQuantiles(load.fit, train.residuals)
+    ### create several plots, one for every week
+    plotPredictionQuantiles(load.test.features$TMS, load.test.features$Y, load.fit, test.quantiles, 4,
+                            paste0(test.dt, " + 1 month in hours"), "load in MW", "Plot of Percentiles")
+    
+    # use hash instead of TMS?
+    tms.row <- cbind(TRAIN.TMS=as.character(train.dt), TEST.TMS=as.character(test.dt))
+    err.row <- cbind(do.call(cbind.data.frame, err.measures), PINBALL=pinball(test.quantiles, load.test.features$Y))
+    res.row <- cbind(tms.row, err.row)
+    if (j == 1) res <- res.row else res <- rbind(res, res.row)
+    
+    # Update
+    train.dt <- addMonth(train.dt)
+    print(paste0("traindt",train.dt))
+    test.dt <- addMonth(test.dt)
+    print(paste0("testdt",test.dt))
+    load.train.dt <- addMonth(load.train.dt)
+    print(paste0("traindt",load.train.dt))
+  }
+  res.final.row <- cbind(TRAIN.TMS=as.character(test.start.dt), TEST.TMS=as.character(addMonth(subHours(test.dt, 1))), RMSE=mean(res$RMSE), MAE=mean(res$MAE), MAPE=mean(res$MAPE), PINBALL=mean(res$PINBALL))
+  res <- rbind(res, res.final.row)
+  row.names(res) <- c(c(1:test.len), "MODEL CV MEAN")
+  appendTableToFile(res, output.file)
+  
+  train.dt <- train.start.dt
+  test.dt <- test.start.dt
+  load.train.dt <- load.train.start.dt
+  
+  CV.res[[k]] <- res
 }
+appendToFile("\n", output.file)
+#}
 dev.off()

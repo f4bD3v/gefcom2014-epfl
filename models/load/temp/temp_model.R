@@ -10,7 +10,7 @@ getPredSeq <- function(temp_df, dt, horz) {
 }
 
 createTempFeatures <- function(avg.temp, start.dt, horizon) {
-  stop.dt <- getStopDtByHorizon(start.dt, horizon)
+  stop.dt <- getStopDtByHorizon(start.dt, horizon, 2)
   if (stop.dt > getLastDt()) {
     dt.seq.target <- as.POSIXct(seq(from=start.dt, to=stop.dt, by="hour"), tz="EST")
     tms <- as.POSIXct(c(as.character(avg.temp$TMS), as.character(dt.seq.target)), tz="EST")
@@ -59,8 +59,8 @@ createTempFeatures <- function(avg.temp, start.dt, horizon) {
   return(features)
 }
 
-getFeatures <- function(feature.df, start.dt, horizon) {
-  stop.dt <- getStopDtByHorizon(start.dt, horizon)
+getFeatures <- function(feature.df, start.dt, horizon, htype) {
+  stop.dt <- getStopDtByHorizon(start.dt, horizon, htype)
   dt.seq.target <- seq(from=start.dt, to=stop.dt, by="hour")
   
   nrows <- nrow(feature.df)
@@ -75,10 +75,13 @@ getFeatures <- function(feature.df, start.dt, horizon) {
   ### CREATE SOME MEAN FEATURES?
   index.seq.days7.before <- calcSeqByIndex(nrows, getColIndex(feature.df$HASH, subDays(start.dt, 7), subHours(start.dt, 1)))
   days7.before <- feature.df$MTEMP[index.seq.days7.before]
-  weeks5.lag.seq <- index.seq.target - (31*24)
+  
+  if(htype == 0) offset <- horizon*24 else if(htype == 1) offset <- horizon*7*24 else offset <- 5*7*24
+
+  days.lag.seq <- index.seq.target - offset
   weeks52.lag.seq <- index.seq.target - (365*24)
   
-  weeks5.lag <- feature.df$MTEMP[weeks5.lag.seq]
+  days.lag <- feature.df$MTEMP[days.lag.seq]
   weeks52.lag <- feature.df$MTEMP[weeks52.lag.seq]
   
   time.of.year <- feature.df$TOY[index.seq.target] 
@@ -91,7 +94,7 @@ getFeatures <- function(feature.df, start.dt, horizon) {
   lagsd <- feature.df$LAGSD[index.seq.target]
   mdiff <- feature.df$LAGMD[index.seq.target]
 
-  feature.list <- list(TMS=dt.seq.target, Y=target, MIN7DB=rep(min(days7.before), length(index.seq.target)), MAX7DB=rep(max(days7.before), length(index.seq.target)), WLAG5=weeks5.lag, WLAG52=weeks52.lag, TOY=time.of.year, MONTH=month, HOUR=hour, LAGM=mean, LAGMD=mdiff, LAGMAX=lagmax, LAGMIN=lagmin, LAGSD=lagsd)
+  feature.list <- list(TMS=dt.seq.target, Y=target, MIN7DB=rep(min(days7.before), length(index.seq.target)), MAX7DB=rep(max(days7.before), length(index.seq.target)), DLAG=days.lag, WLAG52=weeks52.lag, TOY=time.of.year, MONTH=month, HOUR=hour, LAGM=mean, LAGMD=mdiff, LAGMAX=lagmax, LAGMIN=lagmin, LAGSD=lagsd)
   
   features <- do.call(cbind.data.frame, feature.list)
   return(features)
@@ -176,17 +179,17 @@ validateTempModel <- function(trained.model, pred.feature.df, test.dt, model.for
 
 predictTemp <- function(temp.features, start.dt, horizon) {
   train.dt <- subMonths(start.dt, horizon)
-  train.features <- getFeatures(test.features, train.dt, horizon)
-  temp.model <- trainTempModel(train.features, "s(WLAG5, TOY, k=52) + s(WLAG52, k=24) + s(TOY, k=52) + s(HOUR, k=24)", train.dt)
+  train.features <- getFeatures(temp.features, train.dt, horizon, 2)
+  temp.model <- trainTempModel(train.features, "s(DLAG, by=TOY, k=24) + s(WLAG52, k=24) + s(TOY, k=52) + s(HOUR, k=24)", train.dt)
   # predict with model
   # TODO: pass date directly at later stage
-  pred.feature.df <- getFeatures(temp.features, start.dt, 1)
+  pred.feature.df <- getFeatures(temp.features, start.dt, 1, 2)
   # otherwise (no flags set): an array of predictions is returned
   print(pred.feature.df[1, ])
   print(nrow(pred.feature.df))
   pred.fit <- predict.gam(temp.model, pred.feature.df[, -(1:2)])
   plotValidation(pred.fit, "", "" , "Plot of Temperature Predicition for two monts")
-  stop.dt <- getStopDtByHorizon(start.dt, 1)
+  stop.dt <- getStopDtByHorizon(start.dt, 1, 2)
   pred.seq <- seq(start.dt, stop.dt, by="hour")
   fit <- data.frame(TMS=pred.seq, MTEMP=pred.fit, HASH=hashDtYear(pred.seq))
   #colnames(fit) <- colnames(avg.temp)
