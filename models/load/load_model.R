@@ -4,13 +4,11 @@ require(mgcv)
 getTempFeatures <- function(avg.temp.df, train.dt, horizon) {
   stop.dt <- getStopDtByHorizon(train.dt, horizon)
   index.seq <- calcSeqByIndex(nrow(avg.temp.df), getColIndex(avg.temp.df$HASH, train.dt, stop.dt))
-  print(index.seq)
   print(avg.temp.df[1, ])
   data.df <- avg.temp.df$MTEMP
   CTEMP <- data.df[index.seq] ### FEED TEMPERATURE OF PREVIOUS MONTH, previous year (365*24)
   for (i in 1:length(index.seq)) {
     index <- index.seq[i]
-    print(index)
     #index.seq.last7d <- seq(index-720, index-1, 1)
     #mean.last7d <- mean(data.df[index.seq.last7d])
     index.seq.last24h <- seq(index-24, index-1, 1)
@@ -54,7 +52,7 @@ createLoadFeatures <- function(load.df, start.dt, horizon) {
   num.hours <- 365*24
   list.of.seqs <- lapply(tms.year.list, function(x) { return(seq(0,length(x)/num.hours,length.out=length(x))) })#, names(tms.year.list))
   time.of.year <- c(unlist(list.of.seqs))
-  write.table(time.of.year, paste(paste("models/load/", "timeofyear", sep=""), "csv", sep="."), quote=FALSE, row.names=FALSE, sep=",")
+  #write.table(time.of.year, paste(paste("models/load/", "timeofyear", sep=""), "csv", sep="."), quote=FALSE, row.names=FALSE, sep=",")
   
   features <- data.frame(TMS=tms, LOAD=load, TOY=time.of.year, DAYT=daytype, HOUR=hour, HASH=hash)
   return(features)
