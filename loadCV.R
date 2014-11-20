@@ -27,6 +27,9 @@ use.temp1 <- args[5]
 in.path <- "data/load/train"
 out.path <- "data/load/test/CV"
 
+leaderboard.path <- "data/load/submissions/leaderboard_table.csv"
+leaderboard <- read.csv(leaderboard.path, header=TRUE, sep=",")
+
 today <- as.character(Sys.Date())
 if(pred.traintemp) today <- paste0(today, "_train_pred")
 if(use.pca) today <- paste0(today, "_pca") else if(use.temp1) today <- paste0(today, "_temp1")
@@ -66,15 +69,15 @@ test.start.dt <- addYears(getFirstDt(), 10)
 test.dt <- test.start.dt
 test.dt <- subMonths(test.dt, 3)
 test.stop.dt <- subHours(addMonth(test.dt), 1)
-test.horizon <- 1 
-test.len <- 8 + 3
+test.horizon <- 1
+test.len <- 1 
 
 # training set
 train.start.dt <- addYears(getFirstDt(), 2)
 train.dt <- train.start.dt
 train.stop.dt <- subHours(test.dt, 1)
 train.stop.dt <- subMonths(train.stop.dt, 3)
-train.horizon <- 8*12 - 3
+train.horizon <- 8*12 - 3 
 
 load.train.start.dt <- subYears(test.start.dt, 5)
 print(load.train.start.dt)
@@ -118,7 +121,10 @@ CV.res <- list()
 temp.features <- createTempFeatures(avg.temp, train.dt, train.horizon + test.len)
 load.features <- createLoadFeatures(load.df, train.dt, train.horizon + test.len)
 
-fn <- paste("loadCV", k, "_")
+
+htype <- 2 
+
+fn <- paste("loadCV", k, htype, test.horizon, "_")
 fn.pdf <- paste0(fn, "_plots.pdf")
 fn.csv <- paste0(fn, "_results.csv")
 plots.path <- paste(out.path, fn.pdf, sep="/")
@@ -126,7 +132,6 @@ pdf(file=plots.path, width=8, height=11)
 par(mfrow=c(3,1))
 output.file <- paste(out.path, fn.csv, sep="/")
 
-htype <- 2
 #for(k in 1:length(load.model.formulas)) {
 load.model.chr <- paste0("Load Model ", k, ": ", load.model.formulas[[k]])
 load.train.chr <- paste0("Load Model train horizon: ", load.train.horizon)
@@ -134,6 +139,7 @@ appendToFile(load.model.chr, output.file)
 appendToFile(load.train.chr, output.file)
 
 for(i in 1:length(temp.model.formulas)) {
+  PINBALL <- c()
   temp.model.chr <- paste0("Temp Model ", i, ": ", temp.model.formulas[[i]])
   temp.train.chr <- paste0("Temp Model train horizon", train.horizon)
   appendToFile(temp.model.chr, output.file)
@@ -190,10 +196,10 @@ for(i in 1:length(temp.model.formulas)) {
       train.features <- getFeatures(temp.features, train.dt, train.horizon, htype)
       test.features <- getFeatures(temp.features, test.dt, test.horizon, htype)
       
-      train.result <- trainLoadModelFormula(load.train.features, load.model.formulas[[k]], train.dt)
-      load.model <- train.result[["model"]]  
-      capture.output(summary(load.model), file="load_models_CV.txt", append=TRUE)
-      train.residuals <- train.result[["residuals"]]
+#       train.result <- trainLoadModelFormula(load.train.features, load.model.formulas[[k]], train.dt)
+#       load.model <- train.result[["model"]]  
+#       capture.output(summary(load.model), file="load_models_CV.txt", append=TRUE)
+#       train.residuals <- train.result[["residuals"]]
 
       test.stop.dt <- getStopDtByHorizon(test.dt, 1)
       test.dt.seq <- seq(test.dt, test.stop.dt, by="hour")
@@ -251,6 +257,7 @@ for(i in 1:length(temp.model.formulas)) {
     # use hash instead of TMS?
     tms.row <- cbind(TRAIN.TMS=as.character(train.dt), TEST.TMS=as.character(test.dt))
     err.row <- cbind(do.call(cbind.data.frame, err.measures), PINBALL=pinball(test.quantiles, load.test.features$Y))
+    PINBALL <- c(PINBALL, pinball(test.quantiles, load.test.features$Y))
     res.row <- cbind(tms.row, err.row)
     if (j == 1) res <- res.row else res <- rbind(res, res.row)
     
@@ -263,9 +270,30 @@ for(i in 1:length(temp.model.formulas)) {
     print(paste0("traindt",load.train.dt))
   }
   res.final.row <- cbind(TRAIN.TMS=as.character(test.start.dt), TEST.TMS=as.character(addMonth(subHours(test.dt, 1))), RMSE=mean(res$RMSE), MAE=mean(res$MAE), MAPE=mean(res$MAPE), PINBALL=mean(res$PINBALL))
+
+  print(PINBALL)
+  print(leaderboard)
+  scores <- cbind(PINBALL=PINBALL, leaderboard[1:test.len, ])
+  print(scores)
+  avg <- colMeans(scores)  
+  print(avg)
+  avg.row <- cbind(TRAIN.TMS=as.character(test.start.dt), TEST.TMS=as.character(addMonth(subHours(test.dt, 1))), t(avg))
+
+  dates <- res[, c(1,2)]
+  print(dates)
+
+  scores <- cbind(dates, scores)
+  print(scores)
+  scoreboard <- rbind(scores, avg.row)
+  print(scoreboard)
+
   res <- rbind(res, res.final.row)
+
   row.names(res) <- c(c(1:test.len), "MODEL CV MEAN")
+  row.names(scoreboard) <- c(c(1:test.len), "MODEL CV MEAN")
+
   appendTableToFile(res, output.file)
+  appendTableToFile(scoreboard, output.file)
   
   train.dt <- train.start.dt
   test.dt <- test.start.dt

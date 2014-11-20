@@ -14,7 +14,7 @@ getBeforeLastDt <- function() {
 }
 
 getLastDt <- function() {
-  last.dt <- as.POSIXct("09/01/2011 00:00", format="%m/%d/%Y %H:%M", tz="EST")
+  last.dt <- as.POSIXct("10/01/2011 00:00", format="%m/%d/%Y %H:%M", tz="EST")
   return(last.dt)
 }
 

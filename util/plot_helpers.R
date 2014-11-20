@@ -34,6 +34,7 @@ plotPredictionQuantiles <- function(tms, target, fit, fit.quantiles, chunks, xla
   #q.seq <- union(c(1),seq(0,ncol(fit.quantiles),9)[-1])
   for(k in 1:chunks) {
     plot(fit.chunks[[k]] ~ tms.chunks[[k]], col="white", type="l", ylim=c(40, 320), xlab=xlabel, ylab=ylabel, main=title)  
+    # or, only plot for indices in q.seq
     for (i in 1:ncol(fit.quantiles)) {
       lines(fitq.chunks[[k]][, i] ~ tms.chunks[[k]], col="yellow", type="l")
     }

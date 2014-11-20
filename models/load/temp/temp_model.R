@@ -1,5 +1,4 @@
 if(!exists("errorMeasures", mode="function")) source("util/error_func.R")
-if(!exists("reduceToTempDF", mode="function")) source("models/load/temp/temp_helpers.R")
 
 ### TODO: use getDirectFeatures & getCalcFeatures from load.model
 getPredSeq <- function(temp_df, dt, horz) {
@@ -23,7 +22,7 @@ createTempFeatures <- function(avg.temp, start.dt, horizon) {
   }
   
   first.index <- which(hash==hashDtYear(start.dt))
-  last.index <- which(hash==hashDtYear(stop.dt))
+  last.index <- length(hash) #which(hash==hashDtYear(stop.dt))
   mean <- rep(NA, (first.index-1))
   mdiff <- mean
   lagmin <- mean 
@@ -193,8 +192,6 @@ predictTemp <- function(temp.features, start.dt, horizon) {
   pred.seq <- seq(start.dt, stop.dt, by="hour")
   fit <- data.frame(TMS=pred.seq, MTEMP=pred.fit, HASH=hashDtYear(pred.seq))
   #colnames(fit) <- colnames(avg.temp)
-  print(tail(avg.temp$HASH))
-  print(tail(hashDtYear(pred.seq)))
   index1 <- which(avg.temp$HASH==hashDtYear(pred.seq)[1], arr.ind=TRUE)
   index2 <- which(avg.temp$HASH==hashDtYear(pred.seq)[length(pred.seq)], arr.ind=TRUE)
   target <- avg.temp[index1:index2, 2]

@@ -71,11 +71,11 @@ getLoadFeatures <- function(data.df, start.dt, horizon, htype) {
   } else {
     index.seq.target <- calcSeqByIndex(nrows, getColIndex(data.df$HASH, start.dt, stop.dt))
     target <- data.df$LOAD[index.seq.target]
-    print(target)
   }
   
   offset <- 0
   if(htype == 0) offset <- horizon * 24 else if(htype == 1) offset <- horizon * 7 * 24 else offset <- 5 * 7 * 24
+  print(offset)
   days.lag.seq <- index.seq.target - offset
   
   weeks52.lag.seq <- index.seq.target - (52*7*24)
