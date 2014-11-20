@@ -132,5 +132,5 @@ appendToFile <- function(chr, fn) {
 }
 
 appendTableToFile <- function(df, fn) {
-  write.table(df, file=fn, quote=FALSE, append=TRUE, sep=",")
+  write.table(df, file=fn, quote=FALSE, col.names=NA, append=TRUE, sep=",")
 }

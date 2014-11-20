@@ -4,13 +4,12 @@ require(mgcv)
 getTempFeatures <- function(avg.temp.df, train.dt, horizon) {
   stop.dt <- getStopDtByHorizon(train.dt, horizon)
   index.seq <- calcSeqByIndex(nrow(avg.temp.df), getColIndex(avg.temp.df$HASH, train.dt, stop.dt))
-  print(avg.temp.df[1, ])
   data.df <- avg.temp.df$MTEMP
   CTEMP <- data.df[index.seq] ### FEED TEMPERATURE OF PREVIOUS MONTH, previous year (365*24)
   for (i in 1:length(index.seq)) {
     index <- index.seq[i]
-    #index.seq.last7d <- seq(index-720, index-1, 1)
-    #mean.last7d <- mean(data.df[index.seq.last7d])
+    index.seq.last7d <- seq(index-720, index-1, 1)
+    mean.last7d <- mean(data.df[index.seq.last7d])
     index.seq.last24h <- seq(index-24, index-1, 1)
     max.last24h <- max(data.df[index.seq.last24h])
     min.last24h <- min(data.df[index.seq.last24h])
@@ -22,8 +21,7 @@ getTempFeatures <- function(avg.temp.df, train.dt, horizon) {
     ### TODO: Always predict temperature for next 2 months!
     #index.seq.next8h <- seq(index+1, index+8, 1)
     #avg.temp.next8h <- mean(data.df[index.seq.next8h])
-    #MTL7D=mean.last7d, 
-    feature.row <- cbind(MAXT24H=max.last24h, MINT24H=min.last24h, TM24H=temp_24h, TM48H=temp_48h, TM2H=temp_2h, TM1H=temp_1h)
+    feature.row <- cbind(MTL7D=mean.last7d, MAXT24H=max.last24h, MINT24H=min.last24h, TM24H=temp_24h, TM48H=temp_48h, TM2H=temp_2h, TM1H=temp_1h)
     if (i == 1) features <- feature.row else features <- rbind(features, feature.row)
   }
   temp.features <- cbind(CTEMP, features)

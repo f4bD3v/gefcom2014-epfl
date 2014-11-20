@@ -78,20 +78,19 @@ load.df <- cbind(load.df, HASH=hash)
 test.start.dt <- addYears(getFirstDt(), 10)
 test.dt <- test.start.dt
 test.dt <- subMonths(test.dt, 3)
-test.stop.dt <- subHours(addMonth(test.dt), 1)
+print(paste0("testdt", test.dt))
 test.horizon <- 1
 test.len <- 9 + 3 
 
 # training set
 train.start.dt <- addYears(getFirstDt(), 2)
 train.dt <- train.start.dt
-train.stop.dt <- subHours(test.dt, 1)
-train.stop.dt <- subMonths(train.stop.dt, 3)
+print(paste0("traindt", train.dt))
 train.horizon <- 8*12 - 3 
 
 load.train.start.dt <- subYears(test.start.dt, 5)
-print(load.train.start.dt)
 load.train.dt <- load.train.start.dt
+print(paste0("loadtraindt", load.train.dt))
 load.train.horizon <- 5*12 - 3 #train.horizon - 5*12
 
 test.path <- paste(today.path, as.character(as.Date(addMonths(test.dt, test.len))), sep="/")
@@ -102,16 +101,16 @@ if (!dir.exists(out.path)) dir.create(out.path, showWarnings = TRUE, recursive =
 
 # gam models
 temp.model.formulas <-list("mean",
-                      "s(LAGM)",
-                      "s(LAGM) + s(LAGMD)",
-                      "s(LAGM) + s(LAGMD) + s(LAGSD)",
-                      "s(LAGM) + s(LAGMD) + s(LAGMAX) + s(LAGMIN)",
-                      "s(LAGM) + s(LAGMD) + s(LAGMAX) + s(LAGMIN) + s(LAGSD)",
-                      "s(LAGM) + s(LAGMD) + s(LAGMAX) + s(LAGMIN) + s(LAGSD)",
-                      "s(LAGM) + s(WLAG52, by=TOY, k=24) + s(HOUR, k=24)",
+                      #"s(LAGM)",
+                      #"s(LAGM) + s(LAGMD)",
+                      #"s(LAGM) + s(LAGMD) + s(LAGSD)",
+                      #"s(LAGM) + s(LAGMD) + s(LAGMAX) + s(LAGMIN)",
+                      #"s(LAGM) + s(LAGMD) + s(LAGMAX) + s(LAGMIN) + s(LAGSD)",
+                      #"s(LAGM) + s(LAGMD) + s(LAGMAX) + s(LAGMIN) + s(LAGSD)",
+                      #"s(LAGM) + s(WLAG52, by=TOY, k=24) + s(HOUR, k=24)",
                       "s(WLAG52, k=24) + s(TOY, k=52) + s(HOUR, k=24)",
                       "s(DLAG, k=24) + s(WLAG52, k=24) + s(TOY, k=52) + s(HOUR, k=24)",
-                      "s(LAGM) + s(LAGMD) + s(DLAG, TOY, k=52)",
+                      #"s(LAGM) + s(LAGMD) + s(DLAG, TOY, k=52)",
                       "s(DLAG, TOY, k=52) + s(WLAG52, k=24) + s(TOY, k=52) + s(HOUR, k=24)",
                       "s(DLAG, by=TOY, k=24) + s(WLAG52, k=24) + s(TOY, k=52) + s(HOUR, k=24)",
                       "s(DLAG, by=MONTH, k=24) + s(WLAG52, k=24) + s(TOY, k=52) + s(HOUR, k=24)")
@@ -131,10 +130,18 @@ CV.res <- list()
 temp.features <- createTempFeatures(avg.temp, train.dt, train.horizon + test.len)
 load.features <- createLoadFeatures(load.df, train.dt, train.horizon + test.len)
 
-
 htype <- 2 
 
-fn <- paste("loadCV", k, htype, test.horizon, "_")
+if(htype == 2) {
+  hdesc <- "monthlyhorz" 
+} if else(htype == 1) {
+  hdesc <- "weeklyhorz"
+} else {
+  hdesc <- "dailyhorz"
+}
+
+feat.arr <- c(paste0("model", as.character(k)), hdesc, test.horizon)
+fn <- paste("loadCV", paste(feat.arr, collapse="_"), sep="_")
 fn.pdf <- paste0(fn, "_plots.pdf")
 fn.csv <- paste0(fn, "_results.csv")
 plots.path <- paste(out.path, fn.pdf, sep="/")
@@ -159,7 +166,6 @@ for(i in 1:length(temp.model.formulas)) {
   flex.horizon <- 3*12
   if(pred.traintemp) {
     index <- which(avg.temp$HASH==hashDtYear(load.train.dt))
-    print(index)
     avg.temp <- avg.temp[-c(index:nrow(avg.temp)), ]
     write.table(avg.temp, "test.csv")
     for (h in 1:(load.train.horizon+test.len)) {
@@ -189,18 +195,27 @@ for(i in 1:length(temp.model.formulas)) {
         target <- temp.features[index1:index2, 2]
       }  
       #index <- which(avg.temp$HASH == hashDtYear(temp.load.pred.dt), arr.ind = TRUE)  
+      #colnames(fit) <- colnames(avg.temp)
+      if(temp.model.formulas[[i]] != "mean") {
+        target <- temp.features[index1:index2, "LAGM"]      
+      }
+      else {
+        target <- temp.features[index1:index2, 2]
+      }  
+      #index <- which(avg.temp$HASH == hashDtYear(temp.load.pred.dt), arr.ind = TRUE)  
       #if (length(index) != 0) avg.temp <- avg.temp[-c(index:nrow(avg.temp)),]
       pred.temp <- fit
       avg.temp <- rbind(avg.temp, pred.temp)
       # Update
       temp.load.pred.dt <- addMonth(temp.load.pred.dt)
-      print(temp.load.train.dt)
-      print(temp.load.pred.dt)
+      print(paste0("temp.load.train.d", temp.load.train.dt))
+      print(paste0("temp.load.pred.dt", temp.load.pred.dt))
       flex.horizon <- flex.horizon + 1
     }
   }
   print(tail(avg.temp))
   for (j in 1:test.len) {
+   print(j)
     ### TEMPERATURE VALIDATION
     if (!pred.traintemp) {
       train.features <- getFeatures(temp.features, train.dt, train.horizon, htype)
@@ -251,7 +266,7 @@ for(i in 1:length(temp.model.formulas)) {
     load.train.features <- assembleFeatures(load.features, avg.temp, load.train.dt, load.train.horizon, htype)
     load.test.features <- assembleFeatures(load.features, avg.temp, test.dt, test.horizon, htype)
     
-    train.result <- trainLoadModelFormula(load.train.features, load.model.formulas[[k]], train.dt)
+    train.result <- trainLoadModelFormula(load.train.features, load.model.formulas[[k]], load.train.dt)
     load.model <- train.result[["model"]]  
     capture.output(summary(load.model), file="load_models_CV.txt", append=TRUE)
     train.residuals <- train.result[["residuals"]]
@@ -266,6 +281,7 @@ for(i in 1:length(temp.model.formulas)) {
     
     # use hash instead of TMS?
     tms.row <- cbind(TRAIN.TMS=as.character(train.dt), TEST.TMS=as.character(test.dt))
+    err.measures <- pointErrorMeasures(load.test.features$Y, load.fit)
     err.pinball <- pinball(test.quantiles, load.test.features$Y)
     err.row <- cbind(do.call(cbind.data.frame, err.measures), PINBALL=err.pinball)
     PINBALL <- c(PINBALL, err.pinball)
@@ -273,10 +289,10 @@ for(i in 1:length(temp.model.formulas)) {
     POSITIONS <- c(POSITIONS, position)
     res.row <- cbind(tms.row, err.row)
     if (j == 1) res <- res.row else res <- rbind(res, res.row)
-    
+
     # Update
-    train.dt <- addMonth(train.dt)
-    print(paste0("traindt",train.dt))
+    #train.dt <- addMonth(train.dt)
+    #print(paste0("traindt",train.dt))
     test.dt <- addMonth(test.dt)
     print(paste0("testdt",test.dt))
     load.train.dt <- addMonth(load.train.dt)
