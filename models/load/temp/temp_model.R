@@ -184,8 +184,6 @@ predictTemp <- function(temp.features, start.dt, horizon) {
   # TODO: pass date directly at later stage
   pred.feature.df <- getFeatures(temp.features, start.dt, 1, 2)
   # otherwise (no flags set): an array of predictions is returned
-  print(pred.feature.df[1, ])
-  print(nrow(pred.feature.df))
   pred.fit <- predict.gam(temp.model, pred.feature.df[, -(1:2)])
   plotValidation(pred.fit, "", "" , "Plot of Temperature Predicition for two monts")
   stop.dt <- getStopDtByHorizon(start.dt, 1, 2)

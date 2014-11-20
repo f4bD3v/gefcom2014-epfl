@@ -20,7 +20,6 @@ getLastDt <- function() {
 
 addTms <- function(dt) {
   ndt <- paste(dt, "00:00:00 EST", sep=" ") # EST
-  print(ndt)
   return(ndt)
 }
 
