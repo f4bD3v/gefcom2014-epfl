@@ -8,6 +8,14 @@ source("models/load/feature_helpers.R")
 
 ### call: Rscript loadCV.R --args [#model]
 
+calcPosition <- function(leaderboard, row.index, scores) {
+  col.index <- 1
+  for(j in 1:ncol(leaderboard)) {
+    if(leaderboard[row.index, j] >= score) col.index <- j
+  }
+  return(col.index)
+}
+
 args <- as.numeric(commandArgs(TRUE)[-1])
 print(args)
 
@@ -27,8 +35,10 @@ use.temp1 <- args[5]
 in.path <- "data/load/train"
 out.path <- "data/load/test/CV"
 
-leaderboard.path <- "data/load/submissions/leaderboard_table.csv"
+leaderboard.path <- "data/load/submissions/leaderboard.csv"
+firstpos_benchmark.path <- "data/load/submissions/firstpos_benchmark.csv"
 leaderboard <- read.csv(leaderboard.path, header=TRUE, sep=",")
+firstpos_benchmark <- read.csv(firstpos_benchmark.path, header=TRUE, sep=",")
 
 today <- as.character(Sys.Date())
 if(pred.traintemp) today <- paste0(today, "_train_pred")
@@ -256,8 +266,11 @@ for(i in 1:length(temp.model.formulas)) {
     
     # use hash instead of TMS?
     tms.row <- cbind(TRAIN.TMS=as.character(train.dt), TEST.TMS=as.character(test.dt))
-    err.row <- cbind(do.call(cbind.data.frame, err.measures), PINBALL=pinball(test.quantiles, load.test.features$Y))
-    PINBALL <- c(PINBALL, pinball(test.quantiles, load.test.features$Y))
+    err.pinball <- pinball(test.quantiles, load.test.features$Y)
+    err.row <- cbind(do.call(cbind.data.frame, err.measures), PINBALL=err.pinball)
+    PINBALL <- c(PINBALL, err.pinball)
+    position <- calcPosition(leaderboard, j, err.pinball)
+    POSITIONS <- c(POSITIONS, position)
     res.row <- cbind(tms.row, err.row)
     if (j == 1) res <- res.row else res <- rbind(res, res.row)
     
@@ -272,8 +285,9 @@ for(i in 1:length(temp.model.formulas)) {
   res.final.row <- cbind(TRAIN.TMS=as.character(test.start.dt), TEST.TMS=as.character(addMonth(subHours(test.dt, 1))), RMSE=mean(res$RMSE), MAE=mean(res$MAE), MAPE=mean(res$MAPE), PINBALL=mean(res$PINBALL))
 
   print(PINBALL)
+  print(POSITIONS)
   print(leaderboard)
-  scores <- cbind(PINBALL=PINBALL, leaderboard[1:test.len, ])
+  scores <- cbind(PINBALL=PINBALL, POSITION=POSITIONS, firstpos_benchmark[1:test.len, ])
   print(scores)
   avg <- colMeans(scores)  
   print(avg)
