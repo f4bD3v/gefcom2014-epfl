@@ -70,7 +70,7 @@ test.dt <- test.start.dt
 test.dt <- subMonths(test.dt, 3)
 test.stop.dt <- subHours(addMonth(test.dt), 1)
 test.horizon <- 1
-test.len <- 1 
+test.len <- 9 + 3 
 
 # training set
 train.start.dt <- addYears(getFirstDt(), 2)
