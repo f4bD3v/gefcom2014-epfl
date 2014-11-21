@@ -8,7 +8,7 @@ source("models/load/feature_helpers.R")
 
 ### call: Rscript loadCV.R --args [#model]
 
-calcPosition <- function(leaderboard, row.index, scores) {
+calcPosition <- function(leaderboard, row.index, score) {
   col.index <- 1
   for(j in 1:ncol(leaderboard)) {
     if(leaderboard[row.index, j] >= score) col.index <- j
@@ -80,7 +80,7 @@ test.dt <- test.start.dt
 test.dt <- subMonths(test.dt, 3)
 print(paste0("testdt", test.dt))
 test.horizon <- 1
-test.len <- 9 + 3 
+test.len <- 8 + 3 
 
 # training set
 train.start.dt <- addYears(getFirstDt(), 2)
@@ -134,7 +134,7 @@ htype <- 2
 
 if(htype == 2) {
   hdesc <- "monthlyhorz" 
-} if else(htype == 1) {
+} else if(htype == 1) {
   hdesc <- "weeklyhorz"
 } else {
   hdesc <- "dailyhorz"
@@ -157,6 +157,7 @@ appendToFile(load.train.chr, output.file)
 
 for(i in 1:length(temp.model.formulas)) {
   PINBALL <- c()
+  POSITIONS <- c()
   temp.model.chr <- paste0("Temp Model ", i, ": ", temp.model.formulas[[i]])
   temp.train.chr <- paste0("Temp Model train horizon", train.horizon)
   appendToFile(temp.model.chr, output.file)
@@ -181,27 +182,16 @@ for(i in 1:length(temp.model.formulas)) {
       
       if(temp.model.formulas[[i]] == "mean") {
         test.fit <- temp.features[index1:index2, "LAGM"]      
+        target <- temp.features[index1:index2, "LAGM"]      
       }
       else {
         temp.model <- trainTempModel(train.features, temp.model.formulas[[i]], temp.load.train.dt)
         test.fit <- predict.gam(temp.model, test.features[, -(1:2)])
+        target <- temp.features[index1:index2, 2]
       }
       fit <- data.frame(TMS=test.dt.seq, MTEMP=test.fit, HASH=hashDtYear(test.dt.seq))
       #colnames(fit) <- colnames(avg.temp)
-      if(temp.model.formulas[[i]] != "mean") {
-        target <- temp.features[index1:index2, "LAGM"]      
-      }
-      else {
-        target <- temp.features[index1:index2, 2]
-      }  
-      #index <- which(avg.temp$HASH == hashDtYear(temp.load.pred.dt), arr.ind = TRUE)  
-      #colnames(fit) <- colnames(avg.temp)
-      if(temp.model.formulas[[i]] != "mean") {
-        target <- temp.features[index1:index2, "LAGM"]      
-      }
-      else {
-        target <- temp.features[index1:index2, 2]
-      }  
+
       #index <- which(avg.temp$HASH == hashDtYear(temp.load.pred.dt), arr.ind = TRUE)  
       #if (length(index) != 0) avg.temp <- avg.temp[-c(index:nrow(avg.temp)),]
       pred.temp <- fit
@@ -218,6 +208,7 @@ for(i in 1:length(temp.model.formulas)) {
    print(j)
     ### TEMPERATURE VALIDATION
     if (!pred.traintemp) {
+      print("notusingpredictedtemp")
       train.features <- getFeatures(temp.features, train.dt, train.horizon, htype)
       test.features <- getFeatures(temp.features, test.dt, test.horizon, htype)
       
@@ -260,6 +251,7 @@ for(i in 1:length(temp.model.formulas)) {
         pred.temp <- data.frame(TMS=test.dt.seq, MTEMP=target, HASH=hashDtYear(test.dt.seq))
       }
       avg.temp <- rbind(avg.temp, pred.temp)
+      print(tail(avg.temp))
     }
     
     ### LOAD VALIDATION
