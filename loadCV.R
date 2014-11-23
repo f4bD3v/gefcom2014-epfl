@@ -77,7 +77,8 @@ load.df <- cbind(load.df, HASH=hash)
 # test set
 test.start.dt <- addYears(getFirstDt(), 10)
 test.dt <- test.start.dt
-test.dt <- subMonths(test.dt, 3)
+test.dt <- addMonths(test.dt, 8)
+#test.dt <- subMonths(test.dt, 3)
 print(paste0("testdt", test.dt))
 test.horizon <- 1
 test.len <- 8 + 3 
@@ -127,8 +128,8 @@ load.model.formulas <- list("s(CTEMP, k=24) + DAYT + s(HOUR, by=DAYT, k=24) + s(
 ### CROSSVALIDATION ###
 
 CV.res <- list()
+load.features <- createLoadFeatures(load.df, load.train.dt, load.train.horizon + test.len)
 temp.features <- createTempFeatures(avg.temp, train.dt, train.horizon + test.len)
-load.features <- createLoadFeatures(load.df, train.dt, train.horizon + test.len)
 
 htype <- 2 
 
@@ -175,7 +176,7 @@ for(i in 1:length(temp.model.formulas)) {
       train.features <- getFeatures(temp.features, temp.load.train.dt, flex.horizon, htype)
       test.features <- getFeatures(temp.features, temp.load.pred.dt, test.horizon, htype)
       
-      pred.stop.dt <- getStopDtByHorizon(temp.load.pred.dt, 1)
+      pred.stop.dt <- getStopDtByHorizon(temp.load.pred.dt, 1, htype)
       test.dt.seq <- seq(temp.load.pred.dt, pred.stop.dt, by="hour")
       index1 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[1], arr.ind=TRUE)
       index2 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[length(test.dt.seq)], arr.ind=TRUE)
@@ -198,7 +199,7 @@ for(i in 1:length(temp.model.formulas)) {
       avg.temp <- rbind(avg.temp, pred.temp)
       # Update
       temp.load.pred.dt <- addMonth(temp.load.pred.dt)
-      print(paste0("temp.load.train.d", temp.load.train.dt))
+      print(paste0("temp.load.train.dt", temp.load.train.dt))
       print(paste0("temp.load.pred.dt", temp.load.pred.dt))
       flex.horizon <- flex.horizon + 1
     }
@@ -217,7 +218,7 @@ for(i in 1:length(temp.model.formulas)) {
 #       capture.output(summary(load.model), file="load_models_CV.txt", append=TRUE)
 #       train.residuals <- train.result[["residuals"]]
 
-      test.stop.dt <- getStopDtByHorizon(test.dt, 1)
+      test.stop.dt <- getStopDtByHorizon(test.dt, 1 htype)
       test.dt.seq <- seq(test.dt, test.stop.dt, by="hour")
       index1 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[1], arr.ind=TRUE)
       index2 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[length(test.dt.seq)], arr.ind=TRUE)
@@ -231,6 +232,7 @@ for(i in 1:length(temp.model.formulas)) {
       }
       fit <- data.frame(TMS=test.dt.seq, MTEMP=test.fit, HASH=hashDtYear(test.dt.seq))
       #colnames(fit) <- colnames(avg.temp)
+      pred.temp <- fit
       
       if(temp.model.formulas[[i]] == "mean") {
         target <- temp.features[index1:index2, "LAGM"]
@@ -241,12 +243,11 @@ for(i in 1:length(temp.model.formulas)) {
       #plotTraining(test.dt.seq, target, fit$MTEMP, 0, xlabel=paste(as.character(test.dt), "1 month in hours", sep=" +"),
       #             ylabel="Temperature in Fahrenheit", title=paste0("Temperature Model Validation, Model: ", temp.model.formulas[[i]]))
       
+      ## why this?
       if (test.dt < getLastDt() && !pred.traintemp) {
         index <- which(avg.temp$HASH == hashDtYear(test.dt), arr.ind = TRUE)  
         if (length(index) != 0) avg.temp <- avg.temp[-c(index:nrow(avg.temp)),]
       }
-      
-      pred.temp <- fit
       if (use.temp) {
         pred.temp <- data.frame(TMS=test.dt.seq, MTEMP=target, HASH=hashDtYear(test.dt.seq))
       }

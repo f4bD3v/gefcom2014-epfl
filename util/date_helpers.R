@@ -4,6 +4,17 @@ require(stringr)
 
 require(plyr) # for func mapvalues
 
+incrementDt <- function(dt, units, htype) {
+  if(htype == 0) {
+    incr.dt <- addDays(dt, units)
+  } else if (htype == 1) {
+    incr.dt <- addWeeks(dt, units)
+  } else {
+    incr.dt <- addMonths(dt, units)  
+  }
+  return(incr.dt)
+}  
+
 getFirstDt <- function() {
   first.dt <- as.POSIXct("01/01/2001 01:00", format="%m/%d/%Y %H:%M", tz="EST")
   return(first.dt)
@@ -69,15 +80,9 @@ getUSHolidays <- function(dt) {
 }
 
 getStopDtByHorizon <- function(start.dt, units, htype=2) {
-  if(htype == 0) {
-    stop.dt <- addDays(start.dt, units)
-  } else if (htype == 1) {
-    stop.dt <- addWeeks(start.dt, units)
-  } else {
-    stop.dt <- addMonths(start.dt, units)  
-  }
-  return.dt <- subHours(stop.dt, 1)
-  return(return.dt)
+  incr.dt <- incrementDt(start.dt, units, htype)
+  stop.dt <- subHours(incr.dt, 1)
+  return(stop.dt)
 } 
 
 addDays <- function(dt, n) {
