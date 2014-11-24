@@ -28,9 +28,9 @@ getTempFeatures <- function(avg.temp.df, train.dt, horizon, htype) {
   return(temp.features)
 }
 
-createLoadFeatures <- function(load.df, start.dt, horizon) {
+createLoadFeatures <- function(load.df, start.dt, horizon, htype=2) {
   # standard htype: 2 - months
-  stop.dt <- getStopDtByHorizon(start.dt, horizon)
+  stop.dt <- getStopDtByHorizon(start.dt, horizon, htype)
   if (stop.dt > getLastDt()) {
     dt.seq.target <- as.POSIXct(seq(from=start.dt, to=stop.dt, by="hour"), tz="EST")
     tms <- as.POSIXct(c(as.character(load.df$TMS), as.character(dt.seq.target)), tz="EST")

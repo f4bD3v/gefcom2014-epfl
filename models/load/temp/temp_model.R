@@ -8,8 +8,8 @@ getPredSeq <- function(temp_df, dt, horz) {
   return(index_seq)
 }
 
-createTempFeatures <- function(avg.temp, start.dt, horizon) {
-  stop.dt <- getStopDtByHorizon(start.dt, horizon)
+createTempFeatures <- function(avg.temp, start.dt, horizon, htype=2) {
+  stop.dt <- getStopDtByHorizon(start.dt, horizon, htype)
   if (stop.dt > getLastDt()) {
     dt.seq.target <- as.POSIXct(seq(from=start.dt, to=stop.dt, by="hour"), tz="EST")
     tms <- as.POSIXct(c(as.character(avg.temp$TMS), as.character(dt.seq.target)), tz="EST")
