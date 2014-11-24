@@ -306,25 +306,25 @@ for(i in 1:length(temp.model.formulas)) {
   print(leaderboard)
   scores <- cbind(PINBALL=PINBALL, POSITION=POSITIONS, firstpos_benchmark[1:test.len, ])
   print(scores)
-  avg <- colMeans(as.numeric(scores))
-  print(avg)
-  avg.row <- cbind(TRAIN.TMS=as.character(test.start.dt), TEST.TMS=as.character(incrementDt(subHours(test.dt, 1), test.horizon, htype)), t(avg))
+  #avg <- colMeans(as.numeric(scores))
+  #print(avg)
+  #avg.row <- cbind(TRAIN.TMS=as.character(test.start.dt), TEST.TMS=as.character(incrementDt(subHours(test.dt, 1), test.horizon, htype)), t(avg))
 
-  dates <- res[, c(1,2)]
+  dates <- res[1:(nrow(res)-1), c(1,2)]
   print(dates)
 
   scores <- cbind(dates, scores)
   print(scores)
-  scoreboard <- rbind(scores, avg.row)
-  print(scoreboard)
+  #scoreboard <- rbind(scores, avg.row)
+  #print(scoreboard)
 
   res <- rbind(res, res.final.row)
 
   row.names(res) <- c(c(1:test.len), "MODEL CV MEAN")
-  row.names(scoreboard) <- c(c(1:test.len), "MODEL CV MEAN")
+  row.names(scores) <- c(c(1:test.len))#, "MODEL CV MEAN")
 
   appendTableToFile(res, output.file)
-  appendTableToFile(scoreboard, output.file)
+  appendTableToFile(scores, output.file)
   
   train.dt <- train.start.dt
   test.dt <- test.init.dt
