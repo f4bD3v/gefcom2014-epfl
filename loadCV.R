@@ -77,8 +77,7 @@ load.df <- cbind(load.df, HASH=hash)
 # test set
 test.start.dt <- addYears(getFirstDt(), 10)
 test.dt <- test.start.dt
-test.dt <- addMonths(test.dt, 8)
-#test.dt <- subMonths(test.dt, 3)
+test.dt <- subMonths(test.dt, 3)
 print(paste0("testdt", test.dt))
 test.horizon <- 1
 test.len <- 8 + 3 
@@ -130,6 +129,7 @@ load.model.formulas <- list("s(CTEMP, k=24) + DAYT + s(HOUR, by=DAYT, k=24) + s(
 CV.res <- list()
 load.features <- createLoadFeatures(load.df, load.train.dt, load.train.horizon + test.len)
 temp.features <- createTempFeatures(avg.temp, train.dt, train.horizon + test.len)
+print("going on")
 
 htype <- 2 
 
@@ -170,7 +170,7 @@ for(i in 1:length(temp.model.formulas)) {
     index <- which(avg.temp$HASH==hashDtYear(load.train.dt))
     avg.temp <- avg.temp[-c(index:nrow(avg.temp)), ]
     write.table(avg.temp, "test.csv")
-    for (h in 1:(load.train.horizon+test.len)) {
+    for (h in 1:(load.train.horizon+test.len+1)) {
       print(h)
       # increase training period with every month
       train.features <- getFeatures(temp.features, temp.load.train.dt, flex.horizon, htype)
@@ -218,7 +218,7 @@ for(i in 1:length(temp.model.formulas)) {
 #       capture.output(summary(load.model), file="load_models_CV.txt", append=TRUE)
 #       train.residuals <- train.result[["residuals"]]
 
-      test.stop.dt <- getStopDtByHorizon(test.dt, 1 htype)
+      test.stop.dt <- getStopDtByHorizon(test.dt, 1, htype)
       test.dt.seq <- seq(test.dt, test.stop.dt, by="hour")
       index1 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[1], arr.ind=TRUE)
       index2 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[length(test.dt.seq)], arr.ind=TRUE)
