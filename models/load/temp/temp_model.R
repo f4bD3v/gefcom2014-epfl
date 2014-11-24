@@ -93,7 +93,8 @@ getFeatures <- function(feature.df, start.dt, horizon, htype) {
   mdiff <- feature.df$LAGMD[index.seq.target]
 
   #MIN7DB=rep(min(days7.before), length(index.seq.target))
-  feature.list <- list(TMS=dt.seq.target, Y=target, MAX7DB=rep(max(days7.before), length(index.seq.target)), DLAG=days.lag, WLAG52=weeks52.lag, TOY=time.of.year, MONTH=month, HOUR=hour, LAGM=mean, LAGMD=mdiff, LAGMAX=lagmax, LAGMIN=lagmin, LAGSD=lagsd)
+  #MAX7DB=rep(max(days7.before), length(index.seq.target))
+  feature.list <- list(TMS=dt.seq.target, Y=target, DLAG=days.lag, WLAG52=weeks52.lag, TOY=time.of.year, MONTH=month, HOUR=hour, LAGM=mean, LAGMD=mdiff, LAGMAX=lagmax, LAGMIN=lagmin, LAGSD=lagsd)
   
   features <- do.call(cbind.data.frame, feature.list)
   return(features)

@@ -11,7 +11,9 @@ source("models/load/feature_helpers.R")
 calcPosition <- function(leaderboard, row.index, score) {
   col.index <- 1
   for(j in 1:ncol(leaderboard)) {
-    if(leaderboard[row.index, j] >= score) {
+    board.entry <- leaderboard[row.index, j]
+    if(board.entry >= score) {
+      print(board.entry)
       col.index <- j
       return(col.index)
     }
@@ -86,8 +88,9 @@ test.dt <- test.start.dt
 test.init.dt <- subMonths(test.start.dt, 3)
 test.dt <- test.init.dt
 print(paste0("testdt", test.dt))
-test.horizon <- 1
 test.len <- 8 + 4 
+
+test.horizon <- units
 
 # training set
 train.start.dt <- addYears(getFirstDt(), 2)
@@ -138,8 +141,6 @@ load.features <- createLoadFeatures(load.df, load.train.dt, load.train.horizon +
 temp.features <- createTempFeatures(avg.temp, train.dt, train.horizon + test.len)
 print("going on")
 
-htype <- 2 
-
 if(htype == 2) {
   hdesc <- "monthlyhorz" 
 } else if(htype == 1) {
@@ -148,7 +149,7 @@ if(htype == 2) {
   hdesc <- "dailyhorz"
 }
 
-feat.arr <- c(paste0("model", as.character(k)), hdesc, test.horizon)
+feat.arr <- c(paste0("model", k), hdesc, test.horizon)
 fn <- paste("loadCV", paste(feat.arr, collapse="_"), sep="_")
 fn.pdf <- paste0(fn, "_plots.pdf")
 fn.csv <- paste0(fn, "_results.csv")
@@ -183,7 +184,7 @@ for(i in 1:length(temp.model.formulas)) {
       train.features <- getFeatures(temp.features, temp.load.train.dt, flex.horizon, htype)
       test.features <- getFeatures(temp.features, temp.load.pred.dt, test.horizon, htype)
       
-      pred.stop.dt <- getStopDtByHorizon(temp.load.pred.dt, 1, htype)
+      pred.stop.dt <- getStopDtByHorizon(temp.load.pred.dt, test.horizon, htype)
       test.dt.seq <- seq(temp.load.pred.dt, pred.stop.dt, by="hour")
       index1 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[1], arr.ind=TRUE)
       index2 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[length(test.dt.seq)], arr.ind=TRUE)
@@ -205,7 +206,7 @@ for(i in 1:length(temp.model.formulas)) {
       pred.temp <- fit
       avg.temp <- rbind(avg.temp, pred.temp)
       # Update
-      temp.load.pred.dt <- incrementDt(temp.load.pred.dt, 1, htype)
+      temp.load.pred.dt <- incrementDt(temp.load.pred.dt, test.horizon, htype)
       print(paste0("temp.load.train.dt", temp.load.train.dt))
       print(paste0("temp.load.pred.dt", temp.load.pred.dt))
       flex.horizon <- flex.horizon + 1
@@ -225,7 +226,7 @@ for(i in 1:length(temp.model.formulas)) {
 #       capture.output(summary(load.model), file="load_models_CV.txt", append=TRUE)
 #       train.residuals <- train.result[["residuals"]]
 
-      test.stop.dt <- getStopDtByHorizon(test.dt, 1, htype)
+      test.stop.dt <- getStopDtByHorizon(test.dt, test.horizon, htype)
       test.dt.seq <- seq(test.dt, test.stop.dt, by="hour")
       index1 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[1], arr.ind=TRUE)
       index2 <- which(temp.features$HASH==hashDtYear(test.dt.seq)[length(test.dt.seq)], arr.ind=TRUE)
@@ -263,8 +264,8 @@ for(i in 1:length(temp.model.formulas)) {
     }
     
     ### LOAD VALIDATION
-    load.train.features <- assembleFeatures(load.features, avg.temp, load.train.dt, load.train.horizon, htype)
-    load.test.features <- assembleFeatures(load.features, avg.temp, test.dt, test.horizon, htype)
+    load.train.features <- assembleFeatures(load.features, avg.temp, load.train.dt, test.horizon, load.train.horizon, htype)
+    load.test.features <- assembleFeatures(load.features, avg.temp, test.dt, test.horizon, test.horizon, htype)
     
     train.result <- trainLoadModelFormula(load.train.features, load.model.formulas[[k]], load.train.dt)
     load.model <- train.result[["model"]]  
@@ -293,21 +294,21 @@ for(i in 1:length(temp.model.formulas)) {
     # Update
     #train.dt <- addMonth(train.dt)
     #print(paste0("traindt",train.dt))
-    test.dt <- incrementDt(test.dt, 1, htype) 
+    test.dt <- incrementDt(test.dt, test.horizon, htype) 
     print(paste0("testdt",test.dt))
-    load.train.dt <- incrementDt(load.train.dt, 1, htype)
+    load.train.dt <- incrementDt(load.train.dt, test.horizon, htype)
     print(paste0("traindt",load.train.dt))
   }
-  res.final.row <- cbind(TRAIN.TMS=as.character(test.start.dt), TEST.TMS=as.character(incrementDt(subHours(test.dt, 1), 1, htype)), RMSE=mean(res$RMSE), MAE=mean(res$MAE), MAPE=mean(res$MAPE), PINBALL=mean(res$PINBALL))
+  res.final.row <- cbind(TRAIN.TMS=as.character(test.start.dt), TEST.TMS=as.character(incrementDt(subHours(test.dt, 1), test.horizon, htype)), RMSE=mean(res$RMSE), MAE=mean(res$MAE), MAPE=mean(res$MAPE), PINBALL=mean(res$PINBALL))
 
   print(PINBALL)
   print(POSITIONS)
   print(leaderboard)
   scores <- cbind(PINBALL=PINBALL, POSITION=POSITIONS, firstpos_benchmark[1:test.len, ])
   print(scores)
-  avg <- colMeans(scores)  
+  avg <- colMeans(as.numeric(scores))
   print(avg)
-  avg.row <- cbind(TRAIN.TMS=as.character(test.start.dt), TEST.TMS=as.character(incrementDt(subHours(test.dt, 1), 1, htype)), t(avg))
+  avg.row <- cbind(TRAIN.TMS=as.character(test.start.dt), TEST.TMS=as.character(incrementDt(subHours(test.dt, 1), test.horizon, htype)), t(avg))
 
   dates <- res[, c(1,2)]
   print(dates)

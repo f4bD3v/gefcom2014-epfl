@@ -57,7 +57,7 @@ createLoadFeatures <- function(load.df, start.dt, horizon) {
   return(features)
 }
 
-getLoadFeatures <- function(data.df, start.dt, horizon, htype) {
+getLoadFeatures <- function(data.df, start.dt, lag.horizon, horizon, htype) {
   print(paste0("getLoadFeatures",start.dt))
   
   stop.dt <- getStopDtByHorizon(start.dt, horizon, htype)
@@ -73,8 +73,8 @@ getLoadFeatures <- function(data.df, start.dt, horizon, htype) {
   }
   
   offset <- 0
-  if(htype == 0) offset <- horizon * 24 else if(htype == 1) offset <- horizon * 7 * 24 else offset <- 5 * 7 * 24
-  print(offset)
+  if(htype == 0) offset <- lag.horizon * 24 else if(htype == 1) offset <- lag.horizon * 7 * 24 else offset <- 5 * 7 * 24
+  print(paste0("offset", offset))
   days.lag.seq <- index.seq.target - offset
   
   weeks52.lag.seq <- index.seq.target - (52*7*24)
@@ -89,10 +89,10 @@ getLoadFeatures <- function(data.df, start.dt, horizon, htype) {
   return(list(TMS=dt.seq.target, Y=target, DLAG=days.lag, WLAG52=weeks52.lag, TOY=time.of.year, DAYT=daytype, HOUR=hour))
 }  
 
-assembleFeatures <- function(load.features, avg.temp, start.dt, horizon, htype) {
+assembleFeatures <- function(load.features, avg.temp, start.dt, lag.horizon, horizon, htype) {
   # ofset 0 instead of 4 bc load df starts at 2001 with NAs
   temp.features <- getTempFeatures(avg.temp, start.dt, horizon, htype)
-  load.feature.list <- getLoadFeatures(load.features, start.dt, horizon, htype)
+  load.feature.list <- getLoadFeatures(load.features, start.dt, lag.horizon, horizon, htype)
   load.features <- do.call(cbind.data.frame, load.feature.list)
   feature.df <- cbind(load.features, temp.features)
   return(feature.df)
