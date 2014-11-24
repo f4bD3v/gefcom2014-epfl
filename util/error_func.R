@@ -1,3 +1,5 @@
+specify_decimal <- function(x, k) format(round(x, k), nsmall=k)
+
 # Root Mean Squared Error, Mean Absolute Error
 pointErrorMeasures <- function(target, fit) {
   rmse <- rmse(target, fit)
@@ -9,16 +11,18 @@ pointErrorMeasures <- function(target, fit) {
 # Root Mean Squared Error
 rmse <- function(target, fit) {
   rmse <- sqrt( mean((target-fit)^2 , na.rm = TRUE) )
+  return(specify_decimal(rmse, 3))
 }
 
 # Mean Absolute Error 
 mae <- function(target, fit) {
   mae <- mean( abs(target-fit), na.rm = TRUE )
-  return(mae)
+  return(specify_decimal(mae, 3))
 }
 
 mape <- function(target, fit) {
   mape <- mean( abs(target-fit)/target, na.rm = TRUE )
+  return(specify_decimal(mape*100, 1))
 }
 
 # Pinball Error
@@ -40,5 +44,5 @@ pinball <- function(fit_quantiles, target) {
     }
   }
   pinball_loss <- mean(apply(scores, 1, mean))
-  return(pinball_loss)  
+  return(specify_decimal(pinball_loss, 3))
 }
