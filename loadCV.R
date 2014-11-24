@@ -11,9 +11,12 @@ source("models/load/feature_helpers.R")
 calcPosition <- function(leaderboard, row.index, score) {
   col.index <- 1
   for(j in 1:ncol(leaderboard)) {
-    if(leaderboard[row.index, j] >= score) col.index <- j
+    if(leaderboard[row.index, j] >= score) {
+      col.index <- j
+      return(col.index)
+    }
   }
-  return(col.index)
+  return(ncol(leaderboard))
 }
 
 args <- as.numeric(commandArgs(TRUE)[-1])
@@ -31,13 +34,16 @@ use.temp <- args[2]
 pred.traintemp <- args[3]
 use.pca <- args[4]
 use.temp1 <- args[5]
+htype <- args[6]
+units <- args[7]
 
 in.path <- "data/load/train"
 out.path <- "data/load/test/CV"
 
 leaderboard.path <- "data/load/submissions/leaderboard.csv"
 firstpos_benchmark.path <- "data/load/submissions/firstpos_benchmark.csv"
-leaderboard <- read.csv(leaderboard.path, header=TRUE, sep=",")
+leaderboard <- read.csv(leaderboard.path, header=TRUE, row.names=1, sep=",")
+print(leaderboard)
 firstpos_benchmark <- read.csv(firstpos_benchmark.path, header=TRUE, sep=",")
 
 today <- as.character(Sys.Date())
@@ -77,10 +83,11 @@ load.df <- cbind(load.df, HASH=hash)
 # test set
 test.start.dt <- addYears(getFirstDt(), 10)
 test.dt <- test.start.dt
-test.dt <- subMonths(test.dt, 3)
+test.init.dt <- subMonths(test.start.dt, 3)
+test.dt <- test.init.dt
 print(paste0("testdt", test.dt))
 test.horizon <- 1
-test.len <- 8 + 3 
+test.len <- 8 + 4 
 
 # training set
 train.start.dt <- addYears(getFirstDt(), 2)
@@ -170,7 +177,7 @@ for(i in 1:length(temp.model.formulas)) {
     index <- which(avg.temp$HASH==hashDtYear(load.train.dt))
     avg.temp <- avg.temp[-c(index:nrow(avg.temp)), ]
     write.table(avg.temp, "test.csv")
-    for (h in 1:(load.train.horizon+test.len+1)) {
+    for (h in 1:(load.train.horizon+test.len)) {
       print(h)
       # increase training period with every month
       train.features <- getFeatures(temp.features, temp.load.train.dt, flex.horizon, htype)
@@ -198,7 +205,7 @@ for(i in 1:length(temp.model.formulas)) {
       pred.temp <- fit
       avg.temp <- rbind(avg.temp, pred.temp)
       # Update
-      temp.load.pred.dt <- addMonth(temp.load.pred.dt)
+      temp.load.pred.dt <- incrementDt(temp.load.pred.dt, 1, htype)
       print(paste0("temp.load.train.dt", temp.load.train.dt))
       print(paste0("temp.load.pred.dt", temp.load.pred.dt))
       flex.horizon <- flex.horizon + 1
@@ -286,12 +293,12 @@ for(i in 1:length(temp.model.formulas)) {
     # Update
     #train.dt <- addMonth(train.dt)
     #print(paste0("traindt",train.dt))
-    test.dt <- addMonth(test.dt)
+    test.dt <- incrementDt(test.dt, 1, htype) 
     print(paste0("testdt",test.dt))
-    load.train.dt <- addMonth(load.train.dt)
+    load.train.dt <- incrementDt(load.train.dt, 1, htype)
     print(paste0("traindt",load.train.dt))
   }
-  res.final.row <- cbind(TRAIN.TMS=as.character(test.start.dt), TEST.TMS=as.character(addMonth(subHours(test.dt, 1))), RMSE=mean(res$RMSE), MAE=mean(res$MAE), MAPE=mean(res$MAPE), PINBALL=mean(res$PINBALL))
+  res.final.row <- cbind(TRAIN.TMS=as.character(test.start.dt), TEST.TMS=as.character(incrementDt(subHours(test.dt, 1), 1, htype)), RMSE=mean(res$RMSE), MAE=mean(res$MAE), MAPE=mean(res$MAPE), PINBALL=mean(res$PINBALL))
 
   print(PINBALL)
   print(POSITIONS)
@@ -300,7 +307,7 @@ for(i in 1:length(temp.model.formulas)) {
   print(scores)
   avg <- colMeans(scores)  
   print(avg)
-  avg.row <- cbind(TRAIN.TMS=as.character(test.start.dt), TEST.TMS=as.character(addMonth(subHours(test.dt, 1))), t(avg))
+  avg.row <- cbind(TRAIN.TMS=as.character(test.start.dt), TEST.TMS=as.character(incrementDt(subHours(test.dt, 1), 1, htype)), t(avg))
 
   dates <- res[, c(1,2)]
   print(dates)
@@ -319,10 +326,8 @@ for(i in 1:length(temp.model.formulas)) {
   appendTableToFile(scoreboard, output.file)
   
   train.dt <- train.start.dt
-  test.dt <- test.start.dt
+  test.dt <- test.init.dt
   load.train.dt <- load.train.start.dt
-  
-  CV.res[[k]] <- res
 }
 appendToFile("\n", output.file)
 #}

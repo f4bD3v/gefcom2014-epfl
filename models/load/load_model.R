@@ -1,8 +1,8 @@
 require(mgcv)
 
 # ATM passed temp features yearyl
-getTempFeatures <- function(avg.temp.df, train.dt, horizon) {
-  stop.dt <- getStopDtByHorizon(train.dt, horizon)
+getTempFeatures <- function(avg.temp.df, train.dt, horizon, htype) {
+  stop.dt <- getStopDtByHorizon(train.dt, horizon, htype)
   index.seq <- calcSeqByIndex(nrow(avg.temp.df), getColIndex(avg.temp.df$HASH, train.dt, stop.dt))
   data.df <- avg.temp.df$MTEMP
   CTEMP <- data.df[index.seq] ### FEED TEMPERATURE OF PREVIOUS MONTH, previous year (365*24)
@@ -29,6 +29,7 @@ getTempFeatures <- function(avg.temp.df, train.dt, horizon) {
 }
 
 createLoadFeatures <- function(load.df, start.dt, horizon) {
+  # standard htype: 2 - months
   stop.dt <- getStopDtByHorizon(start.dt, horizon)
   if (stop.dt > getLastDt()) {
     dt.seq.target <- as.POSIXct(seq(from=start.dt, to=stop.dt, by="hour"), tz="EST")
@@ -90,7 +91,7 @@ getLoadFeatures <- function(data.df, start.dt, horizon, htype) {
 
 assembleFeatures <- function(load.features, avg.temp, start.dt, horizon, htype) {
   # ofset 0 instead of 4 bc load df starts at 2001 with NAs
-  temp.features <- getTempFeatures(avg.temp, start.dt, horizon)
+  temp.features <- getTempFeatures(avg.temp, start.dt, horizon, htype)
   load.feature.list <- getLoadFeatures(load.features, start.dt, horizon, htype)
   load.features <- do.call(cbind.data.frame, load.feature.list)
   feature.df <- cbind(load.features, temp.features)
