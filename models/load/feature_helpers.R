@@ -158,11 +158,11 @@ frameDiff <- function(df, dim) {
 ## FUNDAMENTAL FLAW, ERROR, BUG --> QUICKFIX
 # PASS HORIZON
 getIndex <- function(tms, start.dt, stop.dt, horizon) {
-  print(start.dt)
+  #print(start.dt)
   index1.dt <- hashDt(start.dt) #replaceYear(start.dt, "2012")
   index1 <- which(tms==index1.dt, arr.ind=TRUE)
   index2.dt <- hashDt(stop.dt) #replaceYear(stop.dt, "2012")
-  print(stop.dt)
+  #print(stop.dt)
   index2 <- which(tms==index2.dt, arr.ind=TRUE)
   if (year(stop.dt) == year(start.dt)) {
     print("same year")
@@ -177,10 +177,9 @@ getIndex <- function(tms, start.dt, stop.dt, horizon) {
 }
 
 getColIndex <- function(tms, start.dt, stop.dt) {
-  print(start.dt)
-  print(stop.dt)
+  #print(stop.dt)
   index1 <- which(tms==hashDtYear(start.dt), arr.ind=TRUE)
-  print(index1)
+  #print(index1)
   index2 <- which(tms==hashDtYear(stop.dt), arr.ind=TRUE)
   return(list(index1, index2))
 }
@@ -188,7 +187,7 @@ getColIndex <- function(tms, start.dt, stop.dt) {
 # ONLY ALLOWS TRAINING PERIODS OF A YEAR
 calcSeqByIndex <- function(nrows, index) {
   print(paste0("calcSeqByIndex", index))
-  print(index)
+  #print(index)
   if (typeof(index) == "list") {
     if (is.numeric(index[[1]])) {
       # NO LIST --> get direct features
