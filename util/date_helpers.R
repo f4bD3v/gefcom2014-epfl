@@ -100,6 +100,11 @@ addWeeks <- function(dt, n) {
   return(ndt)
 }
 
+subWeeks <- function(dt, n) {
+  ndt <- dt - weeks(n)
+  return(ndt)
+}
+
 addMonth <- function(dt) {
   ndt <- dt %m+% months(1)
   return(ndt)

@@ -131,8 +131,8 @@ trainLoadModel <- function(feature.df, train.dt) {
   load.model <- gam(getLoadFormula("Y", colnames), family=gaussian(), data=feature.df)
   saveRDS(feature.df, file="trainData.rds")
   residuals <- feature.df$Y - load.model$fitted.values
-  plotTraining(feature.df$TMS, feature.df$Y, load.model$fitted.values, mean(feature.df$Y)+residuals, xlabel=paste(as.character(train.dt), "1 months in hours", sep=" +"),
-               ylabel="Load in MW", title="Load Model Training")
+  #plotTraining(feature.df$TMS, feature.df$Y, load.model$fitted.values, mean(feature.df$Y)+residuals, xlabel=paste(as.character(train.dt), "1 months in hours", sep=" +"),
+  #             ylabel="Load in MW", title="Load Model Training")
   return(list(model=load.model, residuals=residuals))
 }
 

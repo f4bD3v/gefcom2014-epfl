@@ -58,7 +58,7 @@ createTempFeatures <- function(avg.temp, start.dt, horizon, htype=2) {
   return(features)
 }
 
-getFeatures <- function(feature.df, start.dt, horizon, htype) {
+getFeatures <- function(feature.df, start.dt, lag.horizon, horizon, htype) {
   stop.dt <- getStopDtByHorizon(start.dt, horizon, htype)
   dt.seq.target <- seq(from=start.dt, to=stop.dt, by="hour")
   
@@ -74,7 +74,7 @@ getFeatures <- function(feature.df, start.dt, horizon, htype) {
   #index.seq.days7.before <- calcSeqByIndex(nrows, getColIndex(feature.df$HASH, subDays(start.dt, 7), subHours(start.dt, 1)))
   #days7.before <- feature.df$MTEMP[index.seq.days7.before]
   
-  if(htype == 0) offset <- horizon*24 else if(htype == 1) offset <- horizon*7*24 else offset <- 5*7*24
+  if(htype == 0) offset <- lag.horizon*24 else if(htype == 1) offset <- lag.horizon*7*24 else offset <- 5*7*24
 
   days.lag.seq <- index.seq.target - offset
   weeks52.lag.seq <- index.seq.target - (365*24)

@@ -143,10 +143,13 @@ print("going on")
 
 if(htype == 2) {
   hdesc <- "monthlyhorz" 
+  hinfo <- "months"
 } else if(htype == 1) {
   hdesc <- "weeklyhorz"
+  hinfo <- "weeks"
 } else {
   hdesc <- "dailyhorz"
+  hinfo <- "days"
 }
 
 feat.arr <- c(paste0("model", k), hdesc, test.horizon)
@@ -160,19 +163,22 @@ output.file <- paste(out.path, fn.csv, sep="/")
 
 #for(k in 1:length(load.model.formulas)) {
 load.model.chr <- paste0("Load Model ", k, ": ", load.model.formulas[[k]])
-load.train.chr <- paste0("Load Model train horizon: ", load.train.horizon)
+load.train.chr <- paste0("Load Model Training Length: ", load.train.horizon, " ", hinfo)
 appendToFile(load.model.chr, output.file)
 appendToFile(load.train.chr, output.file)
+cat("\n", file = output.file, append = TRUE)
 
 for(i in 1:length(temp.model.formulas)) {
   PINBALL <- c()
   POSITIONS <- c()
   temp.model.chr <- paste0("Temp Model ", i, ": ", temp.model.formulas[[i]])
-  temp.train.chr <- paste0("Temp Model train horizon", train.horizon)
+  temp.train.chr <- paste0("Temp Model Training Length: ", train.horizon, " ", hinfo)
   appendToFile(temp.model.chr, output.file)
   appendToFile(temp.train.chr, output.file)
+  cat("\n", file = output.file, append = TRUE)
   temp.load.train.dt <- train.dt
   temp.load.pred.dt <- load.train.dt
+
   flex.horizon <- 3*12
   if(pred.traintemp) {
     index <- which(avg.temp$HASH==hashDtYear(load.train.dt))
@@ -181,8 +187,8 @@ for(i in 1:length(temp.model.formulas)) {
     for (h in 1:(load.train.horizon+test.len)) {
       print(h)
       # increase training period with every month
-      train.features <- getFeatures(temp.features, temp.load.train.dt, flex.horizon, htype)
-      test.features <- getFeatures(temp.features, temp.load.pred.dt, test.horizon, htype)
+      train.features <- getFeatures(temp.features, temp.load.train.dt, test.horizon, flex.horizon, htype)
+      test.features <- getFeatures(temp.features, temp.load.pred.dt, test.horizon, test.horizon, htype)
       
       pred.stop.dt <- getStopDtByHorizon(temp.load.pred.dt, test.horizon, htype)
       test.dt.seq <- seq(temp.load.pred.dt, pred.stop.dt, by="hour")
@@ -218,8 +224,8 @@ for(i in 1:length(temp.model.formulas)) {
     ### TEMPERATURE VALIDATION
     if (!pred.traintemp) {
       print("notusingpredictedtemp")
-      train.features <- getFeatures(temp.features, train.dt, train.horizon, htype)
-      test.features <- getFeatures(temp.features, test.dt, test.horizon, htype)
+      train.features <- getFeatures(temp.features, train.dt, test.horizon, train.horizon, htype)
+      test.features <- getFeatures(temp.features, test.dt, test.horizon, test.horizon, htype)
       
 #       train.result <- trainLoadModelFormula(load.train.features, load.model.formulas[[k]], train.dt)
 #       load.model <- train.result[["model"]]  
@@ -281,7 +287,7 @@ for(i in 1:length(temp.model.formulas)) {
                             paste0(test.dt, " + 1 month in hours"), "load in MW", "Plot of Percentiles")
     
     # use hash instead of TMS?
-    tms.row <- cbind(TRAIN.TMS=as.character(train.dt), TEST.TMS=as.character(test.dt))
+    tms.row <- cbind(LOAD.TRAIN.TMS=as.character(load.train.dt), TEST.TMS=as.character(test.dt))
     err.measures <- pointErrorMeasures(load.test.features$Y, load.fit)
     err.pinball <- pinball(test.quantiles, load.test.features$Y)
     err.row <- cbind(do.call(cbind.data.frame, err.measures), PINBALL=err.pinball)
@@ -299,18 +305,18 @@ for(i in 1:length(temp.model.formulas)) {
     load.train.dt <- incrementDt(load.train.dt, test.horizon, htype)
     print(paste0("traindt",load.train.dt))
   }
-  res.final.row <- cbind(TRAIN.TMS=as.character(test.start.dt), TEST.TMS=as.character(incrementDt(subHours(test.dt, 1), test.horizon, htype)), RMSE=mean(res$RMSE), MAE=mean(res$MAE), MAPE=mean(res$MAPE), PINBALL=mean(res$PINBALL))
+  res.final.row <- cbind(LOAD.TRAIN.TMS=as.character(load.train.start.dt), TEST.TMS=as.character(incrementDt(subHours(test.dt, 1), test.horizon, htype)), RMSE=mean(res$RMSE), MAE=mean(res$MAE), MAPE=mean(res$MAPE), PINBALL=mean(res$PINBALL))
 
   print(PINBALL)
   print(POSITIONS)
   print(leaderboard)
-  scores <- cbind(PINBALL=PINBALL, POSITION=POSITIONS, firstpos_benchmark[1:test.len, ])
+  scores <- cbind(MAPE=res$MAPE, PINBALL=PINBALL, POSITION=POSITIONS, firstpos_benchmark[1:test.len, ])
   print(scores)
   #avg <- colMeans(as.numeric(scores))
   #print(avg)
   #avg.row <- cbind(TRAIN.TMS=as.character(test.start.dt), TEST.TMS=as.character(incrementDt(subHours(test.dt, 1), test.horizon, htype)), t(avg))
 
-  dates <- res[1:(nrow(res)-1), c(1,2)]
+  dates <- res[1:(nrow(res)), c(1,2)]
   print(dates)
 
   scores <- cbind(dates, scores)
@@ -324,12 +330,15 @@ for(i in 1:length(temp.model.formulas)) {
   row.names(scores) <- c(c(1:test.len))#, "MODEL CV MEAN")
 
   appendTableToFile(res, output.file)
+  cat("\n", file = output.file, append = TRUE)
   appendTableToFile(scores, output.file)
+  cat("\n", file = output.file, append = TRUE)
   
   train.dt <- train.start.dt
   test.dt <- test.init.dt
   load.train.dt <- load.train.start.dt
 }
-appendToFile("\n", output.file)
+cat("\n", file = output.file, append = TRUE)
+cat("\n", file = output.file, append = TRUE)
 #}
 dev.off()
