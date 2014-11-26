@@ -1,3 +1,4 @@
+source("config.R")
 source("util/error_func.R")
 source("util/date_helpers.R")
 source("util/plot_helpers.R")
@@ -5,7 +6,7 @@ source("util/preprocess.R")
 source("models/load/load_model.R")
 source("models/load/temp/temp_model.R")
 source("models/load/feature_helpers.R")
-source("CV_helpers.R")
+source("util/CV_helpers.R")
 
 ### call: Rscript loadCV.R --args [#model]
 in.path <- "data/load/train"
