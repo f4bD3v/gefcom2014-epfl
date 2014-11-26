@@ -10,7 +10,7 @@ getPredSeq <- function(temp_df, dt, horz) {
 
 createTempFeatures <- function(avg.temp, start.dt, horizon, htype=2) {
   stop.dt <- getStopDtByHorizon(start.dt, horizon, htype)
-  if (stop.dt > getLastDt()) {
+  if (stop.dt > last.dt) {
     dt.seq.target <- as.POSIXct(seq(from=start.dt, to=stop.dt, by="hour"), tz="EST")
     tms <- as.POSIXct(c(as.character(avg.temp$TMS), as.character(dt.seq.target)), tz="EST")
     mtemp <- c(avg.temp$MTEMP, rep(NA, length(dt.seq.target)))
@@ -63,7 +63,7 @@ getFeatures <- function(feature.df, start.dt, lag.horizon, horizon, htype) {
   dt.seq.target <- seq(from=start.dt, to=stop.dt, by="hour")
   
   nrows <- nrow(feature.df)
-  if (stop.dt > getLastDt()) {
+  if (stop.dt > last.dt) {
     target <- rep(NA, length(dt.seq.target)) 
     index.seq.target <- seq(nrows-length(dt.seq.target)+1, nrows, 1)
   } else {
@@ -195,7 +195,7 @@ predictTemp <- function(temp.features, start.dt, horizon, htype) {
   index2 <- which(avg.temp$HASH==hashDtYear(pred.seq)[length(pred.seq)], arr.ind=TRUE)
   target <- avg.temp[index1:index2, 2]
   plotTraining(pred.seq, target, fit[,2], 0, " ", " ", " ")
-  if (start.dt < getLastDt()) {
+  if (start.dt < last.dt) {
     index <- which(avg.temp$HASH == hashDtYear(start.dt), arr.ind = TRUE)  
     avg.temp <- avg.temp[-c(index:nrow(avg.temp)),]
   }

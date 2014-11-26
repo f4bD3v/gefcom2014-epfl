@@ -30,8 +30,8 @@ units <- args[7]
 
 
 ### LOAD LEADERBOARD ###
-leaderboard.path <- "data/load/submissions/leaderboard.csv"
-firstpos_benchmark.path <- "data/load/submissions/firstpos_benchmark.csv"
+leaderboard.path <- "data/load/competition-stats/leaderboard.csv"
+firstpos_benchmark.path <- "data/load/competition-stats/firstpos_benchmark.csv"
 leaderboard <- read.csv(leaderboard.path, header=TRUE, row.names=1, sep=",")
 print(leaderboard)
 firstpos_benchmark <- read.csv(firstpos_benchmark.path, header=TRUE, sep=",")
@@ -39,8 +39,8 @@ firstpos_benchmark <- read.csv(firstpos_benchmark.path, header=TRUE, sep=",")
 
 
 ### PREPARE DATA ###
-last.dt <- getLastDt()
-train.df <- createTrainDF(loadCSVs(in.path), getFirstDt(), last.dt)
+#last.dt <- getLastDt()
+train.df <- createTrainDF(loadCSVs(in.path), first.dt, last.dt)
 
 #** TEMPERATURE **#
 temp.df <- reduceToTempDF(train.df)
@@ -74,9 +74,9 @@ load.df <- cbind(load.df, HASH=hash)
 
 #** TEST DATES **#
 test.stop.dt <- last.dt 
-test.start.dt <- subYear(addHours(test.stop.dt, 1))
-print(paste0("Test Start Dt", test.start.dt))
-print(paste0("Test Stop Dt", test.stop.dt))
+test.start.dt <- subMonths(addHours(test.stop.dt, 1), 1)
+print(paste0("Test Start Dt: ", test.start.dt))
+print(paste0("Test Stop Dt: ", test.stop.dt))
 
 test.month.len <- 12
 test.horizon <- units
@@ -86,8 +86,8 @@ temp.train.year.len <- 7
 
 temp.train.stop.dt <- subHours(test.start.dt, 1)
 temp.train.start.dt <- subYears(test.start.dt, temp.train.year.len)
-print(paste0("Train Start Dt", temp.train.dt))
-print(paste0("Train Stop Dt", temp.train.start.dt))
+print(paste0("Train Start Dt: ", temp.train.start.dt))
+print(paste0("Train Stop Dt: ", temp.train.stop.dt))
 temp.train.dt <- temp.train.start.dt
 
 temp.train.month.len <- temp.train.year.len * 12
@@ -98,14 +98,14 @@ load.train.year.len <- 4
 load.train.stop.dt <- temp.train.stop.dt
 load.train.start.dt <- subYears(test.start.dt, load.train.year.len)
 load.train.dt <- load.train.start.dt
-print(paste0("Load Train Start Dt", load.train.dt))
+print(paste0("Load Train Start Dt: ", load.train.dt))
 
 load.train.month.len <- load.train.year.len * 12
 ################################################
 
 
 ### CREATE FOLDER STRUCTURE ###
-today <- format(as.character(Sys.Date()), "%d-%m-%Y")
+today <- format(Sys.Date(), "%d-%m-%Y")
 
 if(pred.traintemp) folder <- paste0(today, "_train_pred") else if(use.pca) folder <- paste0(today, "_pca") else if(use.temp1) folder <- paste0(today, "_temp1")
 
@@ -120,7 +120,7 @@ pred.type <- getPredictionType(htype, units)
 
 subfolder <- paste(aschr(test.first), aschr(test.last), pred.type, sep="_")
 subfolder.path <- paste(folder.path, subfolder, sep="/")
-if (!dir.exists(subfolder.path)) dir.create(test.path, showWarnings = TRUE, recursive = FALSE, mode = "0777")
+if (!dir.exists(subfolder.path)) dir.create(subfolder.path, showWarnings = TRUE, recursive = FALSE, mode = "0777")
 
 #--- FILES
 str.htype <- htypeToString(htype)
@@ -173,7 +173,7 @@ load.model.formulas <- list("s(CTEMP, k=24) + DAYT + s(HOUR, by=DAYT, k=24) + s(
 # - start.dt: start of load training
 # - horizon: length of features in htype respective units (until test.stop.dt)
 # - htype=2
-load.features <- createLoadFeatures(load.df, load.train.dt, load.train.horizon + test.len)
+load.features <- createLoadFeatures(load.df, load.train.dt, load.train.month.len + test.month.len)
 
 #** createTempFeatures:
 # -
@@ -284,7 +284,7 @@ for(i in 1:length(temp.model.formulas)) {
   ### CROSS VALIDATION ###
   for (j in 1:test.len) {
     #** GET FEATURES FOR CURRENT TRAIN AND TEST PERIODS **#
-    load.train.features <- assembleFeatures(load.features, avg.temp, load.train.dt, test.horizon, load.train.horizon, htype)
+    load.train.features <- assembleFeatures(load.features, avg.temp, load.train.dt, test.horizon, load.train.month.len, htype)
     load.test.features <- assembleFeatures(load.features, avg.temp, test.dt, test.horizon, test.horizon, htype)
 
     load.train.features.fn <- paste0(paste("load-train-features", "model", k, "instance", j, pred.type, sep="_"), ".txt")
