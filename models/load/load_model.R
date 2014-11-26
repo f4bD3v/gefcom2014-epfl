@@ -1,6 +1,38 @@
 require(mgcv)
 
-# ATM passed temp features yearyl
+### CREATE LOAD FEATURES FOR $horizon TIME PERIOD ###
+# - start.dt
+# - htype: standard 2 months
+createLoadFeatures <- function(load.df, start.dt, horizon, htype=2) {
+  stop.dt <- getStopDtByHorizon(start.dt, horizon, htype)
+  if (stop.dt > getLastDt()) {
+    dt.seq.target <- as.POSIXct(seq(from=start.dt, to=stop.dt, by="hour"), tz="EST")
+    tms <- as.POSIXct(c(as.character(load.df$TMS), as.character(dt.seq.target)), tz="EST")
+    load <- c(load.df$LOAD, rep(NA, length(dt.seq.target)))
+    hash <- hashDtYear(tms)
+  } else {
+    load <- load.df$LOAD
+    tms <- load.df$TMS
+    hash <- load.df$HASH
+  }
+  
+  daytype <- as.factor(createMaxDayFeatures(tms))
+  #month <- createMonthFeatures(tms)
+  hour <- createHourFeatures(tms)
+  
+  #** GENERATE TIME OF YEAR (TOY) FEATURE **#
+  tms.year.list <- split(tms, year(ymd(as.Date(tms))))
+  # pass years to function --> as.numeric(year) --> leap_year, if yes divide by specific number of hours in leap year or standard year
+  num.hours <- 365*24
+  list.of.seqs <- lapply(tms.year.list, function(x) { return(seq(0,length(x)/num.hours,length.out=length(x))) })#, names(tms.year.list))
+  time.of.year <- c(unlist(list.of.seqs))
+  #write.table(time.of.year, paste(paste("models/load/", "timeofyear", sep=""), "csv", sep="."), quote=FALSE, row.names=FALSE, sep=",")
+  
+  features <- data.frame(TMS=tms, LOAD=load, TOY=time.of.year, DAYT=daytype, HOUR=hour, HASH=hash)
+  return(features)
+}
+
+### GET TEMPERATURE FEATURES ###
 getTempFeatures <- function(avg.temp.df, train.dt, horizon, htype) {
   stop.dt <- getStopDtByHorizon(train.dt, horizon, htype)
   index.seq <- calcSeqByIndex(nrow(avg.temp.df), getColIndex(avg.temp.df$HASH, train.dt, stop.dt))
@@ -28,34 +60,6 @@ getTempFeatures <- function(avg.temp.df, train.dt, horizon, htype) {
   return(temp.features)
 }
 
-createLoadFeatures <- function(load.df, start.dt, horizon, htype=2) {
-  # standard htype: 2 - months
-  stop.dt <- getStopDtByHorizon(start.dt, horizon, htype)
-  if (stop.dt > last.dt) {
-    dt.seq.target <- as.POSIXct(seq(from=start.dt, to=stop.dt, by="hour"), tz="EST")
-    tms <- as.POSIXct(c(as.character(load.df$TMS), as.character(dt.seq.target)), tz="EST")
-    load <- c(load.df$LOAD, rep(NA, length(dt.seq.target)))
-    hash <- hashDtYear(tms)
-  } else {
-    load <- load.df$LOAD
-    tms <- load.df$TMS
-    hash <- load.df$HASH
-  }
-  
-  daytype <- as.factor(createMaxDayFeatures(tms))
-  #month <- createMonthFeatures(tms)
-  hour <- createHourFeatures(tms)
-  
-  tms.year.list <- split(tms, year(ymd(as.Date(tms))))
-  # pass years to funciton --> as.numeric(year) --> leap_year , if yes divide by specific number of hours in leap year or standard year
-  num.hours <- 365*24
-  list.of.seqs <- lapply(tms.year.list, function(x) { return(seq(0,length(x)/num.hours,length.out=length(x))) })#, names(tms.year.list))
-  time.of.year <- c(unlist(list.of.seqs))
-  #write.table(time.of.year, paste(paste("models/load/", "timeofyear", sep=""), "csv", sep="."), quote=FALSE, row.names=FALSE, sep=",")
-  
-  features <- data.frame(TMS=tms, LOAD=load, TOY=time.of.year, DAYT=daytype, HOUR=hour, HASH=hash)
-  return(features)
-}
 
 getLoadFeatures <- function(data.df, start.dt, lag.horizon, horizon, htype) {
   print(paste0("getLoadFeatures",start.dt))
