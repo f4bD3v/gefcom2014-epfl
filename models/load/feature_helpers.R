@@ -176,6 +176,12 @@ getIndex <- function(tms, start.dt, stop.dt, horizon) {
   return(index)
 }
 
+getSeqByDts <- function(hash, start.dt, stop.dt) {
+  first.index <- which(hash==hashDtYear(start.dt), arr.ind=TRUE)
+  last.index <- which(hash==hashDtYear(stop.dt), arr.ind=TRUE)
+  return(seq.int(first.index, last.index, 1))
+}
+
 getColIndex <- function(tms, start.dt, stop.dt) {
   #print(stop.dt)
   index1 <- which(tms==hashDtYear(start.dt), arr.ind=TRUE)

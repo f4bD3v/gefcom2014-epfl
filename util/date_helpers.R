@@ -206,7 +206,7 @@ reclassifyGapDays <- function(day.types) {
 }
 
 mapDayFeatures <- function(dt.vec, days, nums) {
-  day.types <- unlist(lapply(dt.vec, extractDaytype, getUSHolidays()))
+  day.types <- unlist(lapply(dt.vec, extractDaytype, holidays))
   #day.types.reclass <- reclassifyGapDays(day.types)
   day.types.reclass <- day.types
   day.features <- mapvalues(day.types.reclass, from=days, to=nums)

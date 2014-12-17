@@ -1,11 +1,16 @@
 require(mgcv)
+require(nnet)
+require(randomForest)
 
 ### CREATE LOAD FEATURES FOR $horizon TIME PERIOD ###
-# - start.dt
-# - htype: standard 2 months
+# - start.dt: datetime where to start creating features
+# - htype: horizon type, default=2 --> months
 createLoadFeatures <- function(load.df, start.dt, horizon, htype=2) {
+  # get Datetime at end of horizon
   stop.dt <- getStopDtByHorizon(start.dt, horizon, htype)
-  if (stop.dt > getLastDt()) {
+  # if end of horizon exceeds end of dataset --> generate new tms & hash, add NAs to load
+  if (stop.dt > last.dt) {
+    cat("End of Horizon exceeded End of Dataset in createLoadFeatures()", sep="\n")
     dt.seq.target <- as.POSIXct(seq(from=start.dt, to=stop.dt, by="hour"), tz="EST")
     tms <- as.POSIXct(c(as.character(load.df$TMS), as.character(dt.seq.target)), tz="EST")
     load <- c(load.df$LOAD, rep(NA, length(dt.seq.target)))
@@ -16,43 +21,49 @@ createLoadFeatures <- function(load.df, start.dt, horizon, htype=2) {
     hash <- load.df$HASH
   }
   
+  # create daytypes 1-7, 8 for holiday
   daytype <- as.factor(createMaxDayFeatures(tms))
-  #month <- createMonthFeatures(tms)
   hour <- createHourFeatures(tms)
+  month <- createMonthFeatures(tms)
   
-  #** GENERATE TIME OF YEAR (TOY) FEATURE **#
+  #** CREATE TIME OF YEAR (TOY) FEATURE **#
   tms.year.list <- split(tms, year(ymd(as.Date(tms))))
   # pass years to function --> as.numeric(year) --> leap_year, if yes divide by specific number of hours in leap year or standard year
   num.hours <- 365*24
-  list.of.seqs <- lapply(tms.year.list, function(x) { return(seq(0,length(x)/num.hours,length.out=length(x))) })#, names(tms.year.list))
+  list.of.seqs <- lapply(tms.year.list, function(x) { return(seq(0,length(x)/num.hours,length.out=length(x))) })
   time.of.year <- c(unlist(list.of.seqs))
-  #write.table(time.of.year, paste(paste("models/load/", "timeofyear", sep=""), "csv", sep="."), quote=FALSE, row.names=FALSE, sep=",")
   
-  features <- data.frame(TMS=tms, LOAD=load, TOY=time.of.year, DAYT=daytype, HOUR=hour, HASH=hash)
+  features <- data.frame(TMS=tms, LOAD=load, TOY=time.of.year, DAYT=daytype, MONTH=month, HOUR=hour, HASH=hash)
   return(features)
 }
 
-# ATM passed temp features yearyl
-getTempFeatures <- function(avg.temp.df, train.dt, horizon, htype) {
-  stop.dt <- getStopDtByHorizon(train.dt, horizon, htype)
-  index.seq <- calcSeqByIndex(nrow(avg.temp.df), getColIndex(avg.temp.df$HASH, train.dt, stop.dt))
-  data.df <- avg.temp.df$MTEMP
-  CTEMP <- data.df[index.seq] ### FEED TEMPERATURE OF PREVIOUS MONTH, previous year (365*24)
+
+### GET TEMPERATURE FEATURES FOR LOAD PREDICTION ###
+# - temp.df: the predicted or true temperature (either average over stations, that of first station or principal component of stations
+# - start.dt: datetime from where to start 
+# - horizon: feature length in months/weeks/years
+getLoadTempFeatures <- function(temp.df, start.dt, horizon, htype=2) {
+  cat(paste0("getting Load Temp Features: ",start.dt), sep="\n")
+  cat(paste0("for htype: ", htypeToString(htype)), sep="\n")
+  stop.dt <- getStopDtByHorizon(start.dt, horizon, htype)
+  print(paste0("Stop Dt ", stop.dt))
+  index.seq <- getSeqByDts(temp.df$HASH, start.dt, stop.dt)
+  temp.series <- temp.df$MTEMP
+  CTEMP <- temp.series[index.seq] 
   for (i in 1:length(index.seq)) {
     index <- index.seq[i]
-    index.seq.last7d <- seq(index-720, index-1, 1)
-    mean.last7d <- mean(data.df[index.seq.last7d])
+    index.seq.last7d <- seq(index-168, index-1, 1)
+    mean.last7d <- mean(temp.series[index.seq.last7d])
     index.seq.last24h <- seq(index-24, index-1, 1)
-    max.last24h <- max(data.df[index.seq.last24h])
-    min.last24h <- min(data.df[index.seq.last24h])
-    temp_24h <- data.df[index-24]
-    temp_48h <- data.df[index-48]
-    temp_2h <- data.df[index-2]
-    temp_1h <- data.df[index-1]
+    max.last24h <- max(temp.series[index.seq.last24h])
+    min.last24h <- min(temp.series[index.seq.last24h])
+    temp_24h <- temp.series[index-24]
+    temp_48h <- temp.series[index-48]
+    temp_2h <- temp.series[index-2]
+    temp_1h <- temp.series[index-1]
     # avg temp next 8 hours
-    ### TODO: Always predict temperature for next 2 months!
     #index.seq.next8h <- seq(index+1, index+8, 1)
-    #avg.temp.next8h <- mean(data.df[index.seq.next8h])
+    #avg.temp.next8h <- mean(temp.series[index.seq.next8h])
     feature.row <- cbind(MTL7D=mean.last7d, MAXT24H=max.last24h, MINT24H=min.last24h, TM24H=temp_24h, TM48H=temp_48h, TM2H=temp_2h, TM1H=temp_1h)
     if (i == 1) features <- feature.row else features <- rbind(features, feature.row)
   }
@@ -60,41 +71,50 @@ getTempFeatures <- function(avg.temp.df, train.dt, horizon, htype) {
   return(temp.features)
 }
 
-getLoadFeatures <- function(data.df, start.dt, lag.horizon, horizon, htype) {
-  print(paste0("getLoadFeatures",start.dt))
-  
+### GET PRECOMPUTED LOAD FEATURES FOR LOAD PREDICTION ###
+# - feature.df: precomputed load features
+# - start.dt:
+# - lag.horizon: number of units of htype lag for assigning DLAG
+# - horizon: ahead
+# - htype: as before
+getLoadFeatures <- function(load.features, start.dt, lag.horizon, horizon, htype=2) {
+  cat(paste0("getting Load Features: ",start.dt), sep="\n")
   stop.dt <- getStopDtByHorizon(start.dt, horizon, htype)
+  print(paste0("Stop Dt ", stop.dt))
   dt.seq.target <- seq(from=start.dt, to=stop.dt, by="hour")
-  
-  nrows <- nrow(data.df)
-  if (stop.dt > getLastDt()) {
+  nrows <- nrow(load.features)
+
+  # if end of horizon exceeds end of dataset --> generate new tms & hash, add NAs to load
+  if (stop.dt > last.dt) {
     target <- rep(NA, length(dt.seq.target)) 
     index.seq.target <- seq(nrows-length(dt.seq.target)+1, nrows, 1)
   } else {
-    index.seq.target <- calcSeqByIndex(nrows, getColIndex(data.df$HASH, start.dt, stop.dt))
-    target <- data.df$LOAD[index.seq.target]
+    index.seq.target <- getSeqByDts(load.features$HASH, start.dt, stop.dt)
+    target <- load.features$LOAD[index.seq.target]
   }
   
   offset <- 0
+  ### this may become a problem, if htype and lag.horizon are not related
   if(htype == 0) offset <- lag.horizon * 24 else if(htype == 1) offset <- lag.horizon * 7 * 24 else offset <- 5 * 7 * 24
-  print(paste0("offset", offset))
+  cat(paste0("DLAG offset: ", offset, " hours; htype: ", htypeToString(htype)), sep="\n")
+
   days.lag.seq <- index.seq.target - offset
-  
   weeks52.lag.seq <- index.seq.target - (52*7*24)
   
-  days.lag <- data.df$LOAD[days.lag.seq]
-  weeks52.lag <- data.df$LOAD[weeks52.lag.seq]
+  days.lag <- load.features$LOAD[days.lag.seq]
+  weeks52.lag <- load.features$LOAD[weeks52.lag.seq]
   
-  time.of.year <- data.df$TOY[index.seq.target] 
-  daytype <- data.df$DAYT[index.seq.target] 
-  hour <- data.df$HOUR[index.seq.target] 
+  time.of.year <- load.features$TOY[index.seq.target] 
+  daytype <- load.features$DAYT[index.seq.target] 
+  hour <- load.features$HOUR[index.seq.target]
+  month <- load.features$MONTH[index.seq.target]
 
-  return(list(TMS=dt.seq.target, Y=target, DLAG=days.lag, WLAG52=weeks52.lag, TOY=time.of.year, DAYT=daytype, HOUR=hour))
+  return(list(TMS=dt.seq.target, Y=target, DLAG=days.lag, WLAG52=weeks52.lag, TOY=time.of.year, DAYT=daytype, MONTH=month, HOUR=hour))
 }  
 
-assembleFeatures <- function(load.features, avg.temp, start.dt, lag.horizon, horizon, htype) {
-  # ofset 0 instead of 4 bc load df starts at 2001 with NAs
-  temp.features <- getTempFeatures(avg.temp, start.dt, horizon, htype)
+assembleLoadFeatures <- function(load.features, avg.temp, start.dt, lag.horizon, horizon, htype) {
+  # offset 0 instead of 4 bc load df starts at 2001 with NAs
+  temp.features <- getLoadTempFeatures(avg.temp, start.dt, horizon, htype)
   load.feature.list <- getLoadFeatures(load.features, start.dt, lag.horizon, horizon, htype)
   load.features <- do.call(cbind.data.frame, load.feature.list)
   feature.df <- cbind(load.features, temp.features)
@@ -122,10 +142,42 @@ getLoadFormula <- function(target.var, model.vars) {
 trainLoadModelFormula <- function(feature.df, formula, train.dt) {
   formula <- paste0("Y ~ ", formula)
   load.model <- gam(as.formula(formula), family=gaussian(), data=feature.df)
-  saveRDS(feature.df, file="trainData.rds")
   residuals <- feature.df$Y - load.model$fitted.values
   plotTraining(feature.df$TMS, feature.df$Y, load.model$fitted.values, mean(feature.df$Y)+residuals, xlabel=paste(as.character(train.dt), "1 months in hours", sep=" +"),
                ylabel="Load in MW", title="Load Model Training")
+  return(list(model=load.model, residuals=residuals))
+}
+
+trainLoadModelFormulaLM <- function(feature.df, formula, train.dt) {
+  formula <- paste0("Y ~ ", formula)
+  load.model <- lm(as.formula(formula), family=gaussian(), data=feature.df)
+  residuals <- feature.df$Y - load.model$fitted.values
+  return(list(model=load.model, residuals=residuals))
+}
+
+trainLoadModelFormulaGAM <- function(feature.df, formula, train.dt, gamma) {
+  formula <- paste0("Y ~ ", formula)
+  if(gamma) {
+	load.model <- gam(as.formula(formula), family=Gamma(), data=feature.df)
+  } else {
+	load.model <- gam(as.formula(formula), family=gaussian(), data=feature.df)
+  }
+  residuals <- feature.df$Y - load.model$fitted.values
+  return(list(model=load.model, residuals=residuals))
+}
+
+trainLoadModelFormulaNN <- function(feature.df, formula, train.dt, hidden.units) {
+  formula <- paste0("Y ~ ", formula)
+  load.model <- nnet(formula=as.formula(formula), data=feature.df, maxit=1000, decay=1e-3, size=hidden.units, linout=T)
+#maxit=1000, decay=0.001, trace=F
+  residuals <- feature.df$Y - as.vector(predict(load.model, data=feature.df)) #load.model$fitted.values
+  return(list(model=load.model, residuals=residuals))
+}
+
+trainLoadModelFormulaRF <- function(feature.df, formula, train.dt, ntrees) {
+  formula <- paste0("Y ~ ", formula)
+  load.model <- randomForest(as.formula(formula), data=feature.df, nodesize=20, ntree=ntrees, importance=T)
+  residuals <- feature.df$Y - predict(load.model, data=feature.df) #load.model$predicted
   return(list(model=load.model, residuals=residuals))
 }
 

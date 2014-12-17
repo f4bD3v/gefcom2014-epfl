@@ -1,0 +1,26 @@
+Rscript tempPrediction.R --predTrainTemp TRUE --predMethod GAM --model 2
+Rscript tempPrediction.R --predTrainTemp TRUE --predMethod GAM --gamma TRUE --model 2
+
+Rscript tempPrediction.R --predTrainTemp TRUE --predMethod LM
+
+Rscript tempPrediction.R --predTrainTemp TRUE --predMethod NN --hidden 5
+Rscript tempPrediction.R --predTrainTemp TRUE --predMethod NN --hidden 10
+Rscript tempPrediction.R --predTrainTemp TRUE --predMethod NN --hidden 20
+
+Rscript tempPrediction.R --predTrainTemp TRUE --predMethod RF --ntree 50
+Rscript tempPrediction.R --predTrainTemp TRUE --predMethod RF --ntree 100
+Rscript tempPrediction.R --predTrainTemp TRUE --predMethod RF --ntree 300
+
+
+Rscript detached_loadCV.R --predTemp TRUE --predTrainTemp TRUE --predMethod GAM --model 2 --htype 2 --units 1
+Rscript detached_loadCV.R --predTemp TRUE --predTrainTemp TRUE --predMethod GAM --model 2 --gamma TRUE --htype 2 --units 1
+
+Rscript detached_loadCV.R --predTemp TRUE --predTrainTemp TRUE --predMethod LM --htype 2 --units 1
+
+Rscript detached_loadCV.R --predTemp TRUE --predTrainTemp TRUE --predMethod NN --hidden 5 --htype 2 --units 1
+Rscript detached_loadCV.R --predTemp TRUE --predTrainTemp TRUE --predMethod NN --hidden 10 --htype 2 --units 1
+Rscript detached_loadCV.R --predTemp TRUE --predTrainTemp TRUE --predMethod NN --hidden 20 --htype 2 --units 1
+
+Rscript detached_loadCV.R --predTemp TRUE --predTrainTemp TRUE --predMethod RF --ntree 50 --htype 2 --units 1
+Rscript detached_loadCV.R --predTemp TRUE --predTrainTemp TRUE --predMethod RF --ntree 100 --htype 2 --units 1
+Rscript detached_loadCV.R --predTemp TRUE --predTrainTemp TRUE --predMethod RF --ntree 300 --htype 2 --units 1
