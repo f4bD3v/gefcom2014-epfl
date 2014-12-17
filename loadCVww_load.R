@@ -25,9 +25,13 @@ use.temp <- args[2]
 pred.traintemp <- args[3]
 use.pca <- args[4]
 use.temp1 <- args[5]
-htype <- args[6]
+global.htype <- args[6]
+htype <- global.htype
 units <- args[7]
 
+print(htype)
+
+pred.type <- getPredictionType(htype, units)
 
 ### LOAD LEADERBOARD ###
 leaderboard.path <- "data/load/competition-stats/leaderboard.csv"
@@ -40,6 +44,8 @@ firstpos_benchmark <- read.csv(firstpos_benchmark.path, header=TRUE, sep=",")
 ### PREPARE DATA ###
 #last.dt <- getLastDt()
 train.df <- createTrainDF(loadCSVs(in.path), first.dt, last.dt)
+train.df.fn <- paste0("train-df", ".rds")
+saveRDS(train.df, file=train.df.fn, compress=TRUE)
 
 #** TEMPERATURE **#
 temp.df <- reduceToTempDF(train.df)
@@ -63,20 +69,33 @@ pc.temp <- data.frame(TMS=avg.temp.series$TMS, MTEMP=pc1, HASH=hash)
 if(use.pca) avg.temp <- pc.temp
 
 #** LOAD **#
-load.df <- na.omit(reduceToLoadDF(train.df)) # remove first years of NA values 
+load.df <- reduceToLoadDF(train.df)
+load.df.fn <- paste0("load-df", ".rds")
+saveRDS(load.df, file=load.df.fn, compress=TRUE)
+
 hash <- hashDtYear(load.df$TMS)
 load.df <- cbind(load.df, HASH=hash)
-######################
+load.df.fn <- paste0("load-df-hash", ".rds")
+saveRDS(load.df, file=load.df.fn, compress=TRUE)
+
+start.index <- which(load.df$HASH == hashDtYear(addYears(first.dt, 4)))
+load.df <- load.df[start.index:nrow(load.df),]
+#load.df <- na.omit(load.df) # remove first years of NA values 
+load.df.fn <- paste0("load-df-omit", ".rds")
+saveRDS(load.df, file=load.df.fn, compress=TRUE)
+
+#####################
 
 
 ### DEFINE DATES & HORIZON ###
 
 #** TEST DATES **#
-test.month.len <- 13
+test.month.len <- 2 
 
 test.stop.dt <- last.dt 
 test.start.dt <- subMonths(addHours(test.stop.dt, 1), test.month.len)
 test.dt <- test.start.dt
+last.test.dt <- test.dt
 cat(paste0("Test Start Dt: ", test.start.dt), sep="\n")
 cat(paste0("Test Stop Dt: ", test.stop.dt), sep="\n")
 cat("\n")
@@ -101,6 +120,7 @@ load.train.year.len <- 4
 load.train.stop.dt <- temp.train.stop.dt
 load.train.start.dt <- subYears(test.start.dt, load.train.year.len)
 load.train.dt <- load.train.start.dt
+last.load.train.dt <- load.train.dt
 cat(paste0("Load Train Start Dt: ", load.train.dt), sep="\n")
 cat("\n")
 
@@ -120,7 +140,6 @@ if (!dir.exists(folder.path)) dir.create(folder.path, showWarnings = TRUE, recur
 
 test.first <- format(test.start.dt, "%d-%m-%Y")
 test.last <- format(test.stop.dt, "%d-%m-%Y")
-pred.type <- getPredictionType(htype, units)
 
 subfolder <- paste(aschr(test.first), aschr(test.last), pred.type, sep="_")
 subfolder.path <- paste(folder.path, subfolder, sep="/")
@@ -134,6 +153,7 @@ if (!dir.exists(loadf.subfolder.path)) dir.create(loadf.subfolder.path, showWarn
 #--- FILES
 str.htype <- htypeToString(htype)
 
+### ADAPT FILES ACCORDING TO TEMP MODELS AT LATER STAGE
 #* pdf
 fn.pdf <- paste0(paste("plots", pred.type, sep="_"), ".pdf")
 plots.path <- paste(subfolder.path, fn.pdf, sep="/")
@@ -183,6 +203,8 @@ load.model.formulas <- list("s(CTEMP, k=24) + DAYT + s(HOUR, by=DAYT, k=24) + s(
 # - horizon: length of features in htype respective units (until test.stop.dt)
 # - htype=2
 load.features <- createLoadFeatures(load.df, load.train.dt, load.train.month.len + test.month.len)
+load.features.fn <- paste0("all-load-features", ".rds")
+saveRDS(load.features, file=paste(loadf.subfolder.path, load.features.fn, sep="/"), compress=TRUE)
 
 #** createTempFeatures:
 # -
@@ -191,6 +213,20 @@ load.features <- createLoadFeatures(load.df, load.train.dt, load.train.month.len
 # -
 # -
 temp.features <- createTempFeatures(avg.temp, temp.train.dt, temp.train.month.len + test.month.len)
+temp.features.fn <- paste0("all-temp-features", ".rds")
+saveRDS(temp.features, file=paste(tempf.subfolder.path, temp.features.fn, sep="/"), compress=TRUE)
+
+
+#** CREATE LOOP VARS MONTH AND WEEK PREDICTIONS
+loop.vars = list(c(2,1),
+			c(1,1),
+  			c(1,2),
+  			c(1,3),
+  			c(1,4))
+
+#** CREATE LIST OF RESULT TABLES
+res <- list()
+
 
 #-- PRINT LOAD MODEL TYPE TO FILE
 load.model.chr <- paste0("Load Model ", k, ": ", load.model.formulas[[k]])
@@ -199,7 +235,6 @@ appendToFile(load.model.chr, output.file)
 appendToFile(load.train.chr, output.file)
 cat("\n", file = output.file, append = TRUE)
 #-----------------------------
-
 
 
 #########################
@@ -215,6 +250,8 @@ for(i in 1:length(temp.model.formulas)) {
   appendToFile(temp.train.chr, output.file)
   cat("\n", file = output.file, append = TRUE)
   #-------------------------------
+
+  #### TODO: CHECK IF THERE IS PROBLEM WITH AVG.TEMP IN LOOP
 
   #** PREDICTED TEMPERATURE VS TRUE TEMPERATURE **#
   if(!use.temp) {
@@ -284,11 +321,11 @@ for(i in 1:length(temp.model.formulas)) {
         temp.load.pred.dt <- incrementDt(temp.load.pred.dt, test.horizon, htype)
         cat(paste0("Train Start Dt for Temp Prediction: ", temp.load.train.dt), sep="\n")
         cat(paste0("Test Start Dt for Temp Prediction: ", temp.load.pred.dt), sep="\n")
-	cat("\n")
+		cat("\n")
         # IMPLEMENT DIFFERENT WAY OF HANDLING HORIZONS
         if(pred.traintemp) {
             flex.horizon <- flex.horizon + 1
-	} else {
+		} else {
             temp.load.train.dt <- temp.load.train.dt + 1
         }
     }
@@ -297,72 +334,191 @@ for(i in 1:length(temp.model.formulas)) {
 
   ### CROSS VALIDATION ###
   for (j in 1:test.month.len) {
-    #** GET FEATURES FOR CURRENT TRAIN AND TEST PERIODS **#
-    load.train.features <- assembleFeatures(load.features, avg.temp, load.train.dt, test.horizon, load.train.month.len, htype)
-    load.test.features <- assembleFeatures(load.features, avg.temp, test.dt, test.horizon, test.horizon, htype)
+	# LOOP: CREATE MONTHLY LOAD PREDICTION (DLAG = 35), CREATE PREDICTION FOR FIRST WEEK (DLAG = 7), SECOND WEEK (DLAG = 14), THIRD WEEK (DLAG = 21), FOURTH WEEK (DLAG = 28)
+	for (h in 1:length(loop.vars)) { 
+		var.set <- loop.vars[[h]]
+		htype = var.set[1]
+		test.horizon = 1
+		lag = var.set[2]
 
-    load.train.features.fn <- paste0(paste("train-load-features", "model", k, "instance", j, pred.type, sep="_"), ".rds")
-    saveRDS(load.train.features, file=paste(loadf.subfolder.path, load.train.features.fn, sep="/"), compress=TRUE)
-    load.test.features.fn <- paste0(paste("test-load-features", "model", k, "instance", j, pred.type, sep="_"), ".rds")
-    saveRDS(load.test.features, file=paste(loadf.subfolder.path, load.test.features.fn, sep="/"), compress=TRUE)
-    
-    #** CREATE & SAVE LOAD MODEL **#
-    train.result <- trainLoadModelFormula(load.train.features, load.model.formulas[[k]], load.train.dt)
-    load.model <- train.result[["model"]]  
-    load.model.fn <- paste(subfolder.path, paste0(paste("model", k, "instance", j, pred.type, sep="_"), ".txt"), sep="/")
-    capture.output(summary(load.model), file=load.model.fn)
-    
-    #** CREATE PREDICTION **#
-    load.fit <- predict.gam(load.model, load.test.features[, -(1:2)])
+		pred.type <- getPredictionType(htype, test.horizon)
 
-    #** USE TRAINING RESIDUALS TO COMPUTE PREDICTION QUANTILES **#
-    train.residuals <- train.result[["residuals"]]
-    test.quantiles <- createPredQuantiles(load.fit, train.residuals)
+  		print(tail(avg.temp))
+  		print(load.train.month.len)
+		#** GET FEATURES FOR CURRENT TRAIN AND TEST PERIODS **#
+		# - lag for training changes
+		load.train.features <- assembleLoadFeatures(load.features, avg.temp, load.train.dt, lag, load.train.month.len, 2)
+		# - htype for test horizon changes
+		load.test.features <- assembleLoadFeatures(load.features, avg.temp, test.dt, lag, test.horizon, htype)
 
-    #** CREATE QUANTILE PLOT FOR EVERY WEEK **# 
-    plotPredictionQuantiles(load.test.features$TMS, load.test.features$Y, load.fit, test.quantiles, 4,
-                            paste0(test.dt, " + 1 month in hours"), "load in MW", "Plot of Percentiles")
-    
-    err.scores <- pointErrorMeasures(load.test.features$Y, load.fit)
-    err.pinball <- pinball(test.quantiles, load.test.features$Y)
+		load.train.features.fn <- paste0(paste("train-load-features", "model", k, "instance", j, pred.type, sep="_"), ".rds")
+		saveRDS(load.train.features, file=paste(loadf.subfolder.path, load.train.features.fn, sep="/"), compress=TRUE)
+		load.test.features.fn <- paste0(paste("test-load-features", "model", k, "instance", j, pred.type, sep="_"), ".rds")
+		saveRDS(load.test.features, file=paste(loadf.subfolder.path, load.test.features.fn, sep="/"), compress=TRUE)
+		
+		#** CREATE & SAVE LOAD MODEL **#
+		train.result <- trainLoadModelFormula(load.train.features, load.model.formulas[[k]], load.train.dt)
+		load.model <- train.result[["model"]]  
+		load.model.fn <- paste(subfolder.path, paste0(paste("model", k, "instance", j, pred.type, sep="_"), ".txt"), sep="/")
+		capture.output(summary(load.model), file=load.model.fn)
+		
+		#** CREATE PREDICTION **#
+		load.fit <- predict.gam(load.model, load.test.features[, -(1:2)])
 
-    #** CALC LEADERBOARD POSITION FOR GIVEN MONTH **#
-    position <- calcPosition(leaderboard, j, err.pinball)
-    POSITIONS <- c(POSITIONS, position)
+		#** USE TRAINING RESIDUALS TO COMPUTE PREDICTION QUANTILES **#
+		train.residuals <- train.result[["residuals"]]
+		test.quantiles <- createPredQuantiles(load.fit, train.residuals)
 
-    tms.row <- cbind(LOAD.TRAIN.TMS=as.character(load.train.dt), TEST.TMS=as.character(test.dt))
-    err.row <- cbind(do.call(cbind.data.frame, err.scores), PINBALL=err.pinball)
-    res.row <- cbind(tms.row, err.row)
-    if (j == 1) res <- res.row else res <- rbind(res, res.row)
+		if(h==1) {
+			chunks <- 4
+		} else {
+			chunks <- test.horizon
+		}
+		#** CREATE QUANTILE PLOT FOR EVERY WEEK **# 
+		#plotPredictionQuantiles(load.test.features$TMS, load.test.features$Y, load.fit, test.quantiles, chunks,
+		#						paste0(test.dt, " + 1 month in hours"), "load in MW", "Plot of Percentiles")
+		
+		err.scores <- pointErrorMeasures(load.test.features$Y, load.fit)
+		err.pinball <- pinball(test.quantiles, load.test.features$Y)
 
-    #** UPDATE DATES **# 
-    load.train.dt <- incrementDt(load.train.dt, test.horizon, htype)
-    test.dt <- incrementDt(test.dt, test.horizon, htype) 
-    cat(paste0("Load Train Dt: ",load.train.dt), sep="\n")
-    cat(paste0("Load Test Dt: ",test.dt), sep="\n")
-    cat("\n")
-    #******************#
+		#** CALC ERROR FOR DAYS AFTER W4 **#
+		if(h==1) {
+			rest.days <- c((4*7*24):nrow(load.fit))
+			if(length(rest.days) == 1) {
+				rest.err.scores <- list(RMSE=0,MAE=0,MAPE=0)
+				rest.err.pinball <- 0
+			} else {
+				rest.err.scores <- pointErrorMeasures(load.test.features$Y[rest.days], load.fit[rest.days])
+				rest.err.pinball <- pinball(test.quantiles[rest.days,], load.test.features$Y[rest.days])
+			}
+		}
+
+		#** CALC LEADERBOARD POSITION FOR GIVEN MONTH **#
+		if(h==1) {
+			position <- calcPosition(leaderboard, j, err.pinball)
+			POSITIONS <- c(POSITIONS, position)
+		}
+
+    	tms.row <- cbind(LOAD.TRAIN.TMS=as.character(load.train.dt), TEST.TMS=as.character(test.dt))
+    	err.row <- cbind(do.call(cbind.data.frame, err.scores), PINBALL=err.pinball)
+    	res.row <- cbind(tms.row, err.row)
+    	cat("h ", h, sep="\n")
+
+		#** RECORD ERROR FOR DAYS AFTER W4 **#
+		if (h==1) {
+    		if (j == 1) res[[h]] <- res.row else res[[h]] <- rbind(res[[h]], res.row)
+			rest.test.dt <- incrementDt(test.dt, 4, 1)
+    		tms.row <- cbind(LOAD.TRAIN.TMS=as.character(load.train.dt), TEST.TMS=as.character(rest.test.dt))
+    		err.row <- cbind(do.call(cbind.data.frame, rest.err.scores), PINBALL=rest.err.pinball)
+    		res.row <- cbind(tms.row, err.row)
+    		cat("length loop.vars", length(loop.vars), sep="\n")
+    		hp <- h + 1
+    		if (j == 1) res[[hp]] <- res.row else res[[hp]] <- rbind(res[[hp]], res.row)
+    	} else {
+    		hp <- h + 1
+    		if (j == 1) res[[hp]] <- res.row else res[[hp]] <- rbind(res[[hp]], res.row)
+    	}
+		print(res[[hp]])
+
+		#** UPDATE DATES **# 
+		if(h==1) {
+			last.test.dt <- test.dt
+			last.load.train.dt <- load.train.dt
+		}
+
+		if(h > 1 && lag != 4) {
+			load.train.dt <- incrementDt(load.train.dt, 1, htype)
+			test.dt <- incrementDt(test.dt, 1, htype) 
+		} else if (lag == 4) {
+			load.train.dt <- incrementDt(last.load.train.dt, 1, 2)
+			test.dt <- incrementDt(last.test.dt, 1, 2) 
+		}
+		cat(paste0("Load Train Dt: ", load.train.dt), sep="\n")
+		cat(paste0("Load Test Dt: ", test.dt), sep="\n")
+		cat("\n")
+		#******************#
+	}
   }
-  res.last.row <- cbind(LOAD.TRAIN.TMS=as.character(load.train.start.dt), TEST.TMS=as.character(incrementDt(subHours(test.dt, 1), test.horizon, htype)), RMSE=mean(res$RMSE), MAE=mean(res$MAE), MAPE=mean(res$MAPE), PINBALL=mean(res$PINBALL))
-  score.board <- rbind(res, res.last.row)
 
-  position.board <- cbind(MAPE=res$MAPE, PINBALL=res$PINBALL, POSITION=POSITIONS, firstpos_benchmark[1:test.month.len, ])
-  dates <- res[1:(nrow(res)), c(1,2)]
+  score.board <- list()
+  for(h in 1:(length(loop.vars)+1)) {
+  	res.last.row <- cbind(LOAD.TRAIN.TMS=as.character(load.train.start.dt), TEST.TMS=as.character(last.test.dt), RMSE=mean(res[[h]]$RMSE), MAE=mean(res[[h]]$MAE), MAPE=mean(res[[h]]$MAPE), PINBALL=mean(res[[h]]$PINBALL))
+  	score.board[[h]] <- rbind(res[[h]], res.last.row)
+  	row.names(score.board[[h]]) <- c(c(1:test.month.len), "MODEL CV MEAN")
+  }
 
+  position.board <- cbind(MAPE=res[[1]]$MAPE, PINBALL=res[[1]]$PINBALL, POSITION=POSITIONS, PINBALL_FIRSTPOS=firstpos_benchmark[1:test.month.len, ])
+  dates <- res[[1]][1:nrow(res[[1]]), 1:2]
   position.board <- cbind(dates, position.board)
-
-  row.names(score.board) <- c(c(1:test.month.len), "MODEL CV MEAN")
   row.names(position.board) <- c(1:test.month.len)#, "MODEL CV MEAN")
 
-  appendTableToFile(score.board, output.file)
-  cat("\n", file = output.file, append = TRUE)
+  ### LATER: DO STATS AND RECOMPUTE 
+  for(h in 1:(length(loop.vars)+1)) {
+  	appendTableToFile(score.board[[h]], output.file)
+  	cat("\n", file = output.file, append = TRUE)
+	scores.subfolder.path <- paste(subfolder.path, "scores", sep="/")
+	if (!dir.exists(scores.subfolder.path)) dir.create(scores.subfolder.path, showWarnings = TRUE, recursive = FALSE, mode = "0777")
+	if (h==1) {
+		scores.fn <- paste0(paste("tempm", i, "scores", "1m", sep="_"), ".rds")
+
+		col <- position.board[1:test.month.len, 1:4]
+		comp <- col
+	} else if (h==2) {
+		scores.fn <- paste0(paste("tempm", i, "scores", "5wrest", sep="_"), ".rds")
+	} else {
+		var.set <- loop.vars[[h-1]]
+		htype = var.set[1]
+		test.horizon = var.set[2]
+		scores.fn <- paste0(paste("tempm", i, "scores", getPredictionType(htype, test.horizon), sep="_"), ".rds")
+
+		sb <- score.board[[h]]
+		col <- sb$PINBALL[1:test.month.len]
+		col <- as.numeric(col)
+		prev.coln <- colnames(comp)
+		comp <- cbind(comp, col)
+		colnames(comp) <- c(prev.coln, c(paste0("PINBALL_w", h-2)))
+	}
+  	### SAVE SCORES TO RDS FILES ###
+   	saveRDS(score.board[[h]], file=paste(scores.subfolder.path, scores.fn, sep="/"), compress=TRUE)
+  }
   appendTableToFile(position.board, output.file)
   cat("\n", file = output.file, append = TRUE)
+ 
+  colnames(comp) <- c("TRAIN.TMS", "TEST.TMS", "1m", "1m_pos", "1w", "2w", "3w", "4w")
+  #comp <- data.frame(TRAIN.TMS=comp[,1], TEST.TMS=comp[,2], PINBALL_1m=as.numeric(comp[,3]), POS_1m=as.numeric(comp[,4]), PINBALL_1w=as.numeric(comp[,5]), PINBALL_2w=as.numeric(comp[,6]), PINBALL_3w=as.numeric(comp[,7]), PINBALL_4w=as.numeric(comp[,8]))
+  comp <- data.frame(TRAIN.TMS=comp[,1], TEST.TMS=comp[,2], PINBALL_1m=comp[,3], POS_1m=comp[,4], PINBALL_1w=comp[,5], PINBALL_2w=comp[,6], PINBALL_3w=comp[,7], PINBALL_4w=comp[,8])
+  #sapply(comp, mode)
+  #sapply(comp, class)
+  #comp[,3:8] <- sapply(comp[, 3:8], as.numeric)
+
+  combined.score <- c()
+  combined.pos <- c()
+  #ul <- unname(unlist(comp))
+  #print(ul)
+  scores <- rowMeans(comp[, 5:8, drop=FALSE], na.rm=TRUE)
+  #scores <- apply(comp[,5:8, drop=FALSE], 1, mean, na.rm=TRUE)	
+  print(as.numeric(scores))
+  print(scores[1])
+  for(h in 1:test.month.len) {
+    score <- scores[h]
+	#print(paste0("score", score))
+	combined.score <- c(combined.score, score)
+	combined.pos <- calcPosition(leaderboard, h, score)
+  }
+  comparison.board <- cbind(comp, PINBALL_wavg=combined.score, POS_wavg=combined.pos)
+  appendTableToFile(comparison.board, output.file)
+  cat("\n", file = output.file, append = TRUE)
+
+  comparison.board.fn <- paste0("comparison_board_tempm_", as.character(i), ".rds")
+  saveRDS(comparison.board, file=paste(scores.subfolder.path, comparison.board.fn, sep="/"), compress=TRUE)
   
   ### IMPORTANT: RESET DATES ###
   temp.train.dt <- temp.train.start.dt
   load.train.dt <- load.train.start.dt
   test.dt <- test.start.dt
+
+  htype <- global.htype
+  test.horizon <- units
   ###############
 
   cat("\n", file = output.file, append = TRUE)

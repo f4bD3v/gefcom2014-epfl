@@ -1,5 +1,8 @@
 loadCSVs <- function(path) {
   files <- dir(path, pattern = '\\.csv', full.names = TRUE)
+  print(files)
+  files <- files[order(nchar(files), files)]
+  print(files)
   tables <- lapply(files, read.csv)
   assign('train_data', do.call(rbind, tables))
   return(train_data)
@@ -125,6 +128,10 @@ createTempHistos <- function(temp_series, filepath) {
     # to keep seeing the plot use: dev.copy(png,'myplot.png')
     dev.off()
   }
+}
+
+writeToFile <- function(chr, fn) {
+  write(chr, file=fn)
 }
 
 appendToFile <- function(chr, fn) {

@@ -1,14 +1,8 @@
 if(!exists("errorMeasures", mode="function")) source("util/error_func.R")
 
-### TODO: use getDirectFeatures & getCalcFeatures from load.model
-getPredSeq <- function(temp_df, dt, horz) {
-  index_dt <- replaceYear(dt, "2012")
-  index <- which(temp_df$TMS==index_ts, arr.ind=TRUE)
-  index_seq = seq.int(index+1, index+horz, 1)
-  return(index_seq)
-}
-
+### CREATE TEMPERATURE FEATURES FOR GIVEN HORIZON ###
 createTempFeatures <- function(avg.temp, start.dt, horizon, htype=2) {
+  cat("Creating Temperature Features starting from: ", as.character(start.dt), "\n")
   stop.dt <- getStopDtByHorizon(start.dt, horizon, htype)
   if (stop.dt > last.dt) {
     dt.seq.target <- as.POSIXct(seq(from=start.dt, to=stop.dt, by="hour"), tz="EST")
@@ -22,15 +16,15 @@ createTempFeatures <- function(avg.temp, start.dt, horizon, htype=2) {
   }
   
   first.index <- which(hash==hashDtYear(start.dt))
-  last.index <- length(hash) #which(hash==hashDtYear(stop.dt))
+  last.index <- which(hash==hashDtYear(stop.dt))
+  #last.index <- length(hash)
   mean <- rep(NA, (first.index-1))
   mdiff <- mean
   lagmin <- mean 
   lagmax <- mean 
   lagsd <- mean
-  print(first.index)
-  print(last.index)
   for(i in last.index:first.index) {
+	#** GET YEARLY PAST INDICES FROM CURRENT INDEX i **#
     lag.indices <- seq.int(i,1, -(365*24))[-1]  
     lags <- avg.temp[lag.indices, 2]
     mean <- c(mean, mean(lags))
@@ -40,25 +34,21 @@ createTempFeatures <- function(avg.temp, start.dt, horizon, htype=2) {
     mdiff <- c(mdiff, mean(diff(lags)))
   }
   
-  print(length(mtemp))
-  print(length(tms))
-  
-  hour <- createHourFeatures(tms) #as.factor(createHourFeatures(tms))
+  hour <- createHourFeatures(tms)
   month <- as.factor(createMonthFeatures(tms))
   
   tms.year.list <- split(tms, year(ymd(as.Date(tms))))
-  
   # pass years to funciton --> as.numeric(year) --> leap_year , if yes divide by specific number of hours in leap year or standard year
   num.hours <- 365*24
   list.of.seqs <- lapply(tms.year.list, function(x) { return(seq(0,length(x)/num.hours,length.out=length(x))) })#, names(tms.year.list))
   time.of.year <- c(unlist(list.of.seqs))
-  print(length(time.of.year))
   
   features <- data.frame(TMS=tms, MTEMP=mtemp, TOY=time.of.year, HOUR=hour, MONTH=month, LAGM=mean, LAGMD=mdiff, LAGMAX=lagmax, LAGMIN=lagmin, LAGSD=lagsd, HASH=hash)
   return(features)
 }
 
 getFeatures <- function(feature.df, start.dt, lag.horizon, horizon, htype) {
+  cat("Fetching Temperature Features starting from: ", as.character(start.dt), "\n")
   stop.dt <- getStopDtByHorizon(start.dt, horizon, htype)
   dt.seq.target <- seq(from=start.dt, to=stop.dt, by="hour")
   
@@ -67,7 +57,8 @@ getFeatures <- function(feature.df, start.dt, lag.horizon, horizon, htype) {
     target <- rep(NA, length(dt.seq.target)) 
     index.seq.target <- seq(nrows-length(dt.seq.target)+1, nrows, 1)
   } else {
-    index.seq.target <- calcSeqByIndex(nrows, getColIndex(feature.df$HASH, start.dt, stop.dt))
+    index.seq.target <- getSeqByDts(feature.df$HASH, start.dt, stop.dt)
+    #index.seq.target <- calcSeqByIndex(nrows, getColIndex(feature.df$HASH, start.dt, stop.dt))
     target <- feature.df$MTEMP[index.seq.target]
   }
   
@@ -75,6 +66,7 @@ getFeatures <- function(feature.df, start.dt, lag.horizon, horizon, htype) {
   #days7.before <- feature.df$MTEMP[index.seq.days7.before]
   
   if(htype == 0) offset <- lag.horizon*24 else if(htype == 1) offset <- lag.horizon*7*24 else offset <- 5*7*24
+  cat(paste0("DLAG offset: ", offset, " hours; htype: ", htype), sep="\n")
 
   days.lag.seq <- index.seq.target - offset
   weeks52.lag.seq <- index.seq.target - (365*24)
@@ -98,27 +90,9 @@ getFeatures <- function(feature.df, start.dt, lag.horizon, horizon, htype) {
   
   features <- do.call(cbind.data.frame, feature.list)
   return(features)
- }  
-
-assembleTempFeatures <- function(avg.temp, avg.temp.yearly, start.dt, horizon) {
-  ### MAKE SURE NOT TO EXCEED LAST DAY OF MONTH !!! OTHERWISE NA IS PRODUCED
-  #if(nchar(as.character(start.dt)) == 10) {
-  #  start.dt <- as.POSIXct(addTms(start.dt), "Y:"
-  #}
-  print(paste0("assembleTempFeatures",start.dt))
-  direct.features <- getDirectFeatures(avg.temp, start.dt, horizon)
-  # offset 0, bc load df starts at 2001 with NAs
-  calc.features <- getRowFeatures(avg.temp.yearly, start.dt, horizon, 0)
-  # drop date and time features
-  direct.features.df <- do.call(cbind.data.frame, direct.features)
-  calc.features.df <- do.call(cbind.data.frame, calc.features)
-  feature.df <- cbind(direct.features.df, calc.features.df)
-  return(feature.df)
-}
+}  
 
 #TODO: hard code formula, because some of the parameters should be grouped with smoothing functions
-### TODO: devise different formulas to be tested in crossvalidation
-
 # use real temp
 # average over 5 years
 
@@ -142,6 +116,39 @@ getTempFormula <- function(target.var, model.vars) {
   print(str.formula)
   # y ~ x1 + x2 + x3
   return(as.formula(str.formula))
+}
+
+trainTempModelFormulaLM <- function(feature.df, formula, train.dt) {
+  formula <- paste0("Y ~ ", formula)
+  temp.model <- lm(as.formula(formula), data=feature.df)
+  residuals <- feature.df$Y - temp.model$fitted.values
+  return(list(model=temp.model, residuals=residuals))
+}
+
+trainTempModelFormulaGAM <- function(feature.df, formula, train.dt, gamma) {
+  formula <- paste0("Y ~ ", formula)
+  if(gamma) {
+	temp.model <- gam(as.formula(formula), family=Gamma(), data=feature.df)
+  } else {
+	temp.model <- gam(as.formula(formula), family=gaussian(), data=feature.df)
+  }
+  residuals <- feature.df$Y - temp.model$fitted.values
+  return(list(model=temp.model, residuals=residuals))
+}
+
+trainTempModelFormulaNN <- function(feature.df, formula, train.dt, hidden.units) {
+  formula <- paste0("Y ~ ", formula)
+  temp.model <- nnet(formula=as.formula(formula), data=feature.df, maxit=1000, decay=1e-3, size=hidden.units, linout=T)
+#maxit=1000, decay=0.001, trace=F
+  residuals <- feature.df$Y - as.vector(predict(temp.model, data=feature.df)) #load.model$fitted.values
+  return(list(model=temp.model, residuals=residuals))
+}
+
+trainTempModelFormulaRF <- function(feature.df, formula, train.dt, ntrees) {
+  formula <- paste0("Y ~ ", formula)
+  temp.model <- randomForest(as.formula(formula), data=feature.df, nodesize=20, ntree=ntrees, importance=T)
+  residuals <- feature.df$Y - predict(temp.model, data=feature.df) #load.model$predicted
+  return(list(model=temp.model, residuals=residuals))
 }
 
 trainTempLmModel <- function(avg.temp, avg.temp.yearly, train.dt, horizon) {
