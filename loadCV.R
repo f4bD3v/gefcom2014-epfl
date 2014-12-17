@@ -39,8 +39,7 @@ firstpos_benchmark <- read.csv(firstpos_benchmark.path, header=TRUE, sep=",")
 
 
 ### PREPARE DATA ###
-last.dt <- getLastDt()
-train.df <- createTrainDF(loadCSVs(in.path), getFirstDt(), last.dt)
+train.df <- createTrainDF(loadCSVs(in.path), first.dt, last.dt)
 
 #** TEMPERATURE **#
 temp.df <- reduceToTempDF(train.df)

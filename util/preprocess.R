@@ -1,5 +1,6 @@
 loadCSVs <- function(path) {
   files <- dir(path, pattern = '\\.csv', full.names = TRUE)
+  print(files)
   tables <- lapply(files, read.csv)
   assign('train_data', do.call(rbind, tables))
   return(train_data)
