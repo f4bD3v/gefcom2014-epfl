@@ -1,0 +1,59 @@
+\documentclass{article}
+
+\begin{document}
+
+\title{Report Outline}
+\author{Fabian}
+
+\maketitle
+
+\section{Introduction}
+A short introduction to the field of load forecasting and its relevance.\\
+Description of the competition.
+
+\section{Review of related Work}
+Review previous work from Gefcom 2012. Distinguish between temperature and load prediction.\\
+Review papers with related approaches including but not limited to those that can be found under the following link: http://blog.drhongtao.com/2014/08/recommended-papers-for-gefcom2014-contestants.html
+
+\section{Data}
+Description of the data made available for the competition
+\subsection{Temperature Data}
+\subsection{Load Data}
+\subsection{Basic exploration with Time Series Analysis Methods}
+Autocorrelation, include decompositions?
+
+\section{Feature 'Extraction'}
+Description of the features obtained from the data. 
+\subsection{Calendar Features}
+hour, TOY vs. month
+
+\section{Models}
+Description of the Models (LM), GAM (more extensive), NN, RF
+
+\section{Analysis}
+What combination of features and models for temperature and load provide us with a good prediction accuracy with respect to Gefcom leaderboard?
+
+\subsection{Error Measures}
+Introduce error measures (RMSE, MAE, MAPE, PINBALL) and their differences here? Too late?
+
+\subsection{Temperature Modeling}
+\subsubsection{Data Processing}
+average temperature vs. principal component
+
+\subsubsection{Effect on Load Prediction}
+Effect of temperature on load prediction evaluated using different methods:\\
+Mean over past years (yearly lag), LM, GAM, NN, RF vs. true temperature
+
+\subsection{Load Modeling}
+
+\subsubsection{Performance of different Methods}
+GAM, NN, RF 
+
+\subsubsection{Model Formulas}
+Evaluating the performance of different model formulas built with the features (GAM)
+
+
+\section{Conclusion}
+Draw conclusion based on the analysis done in the main part.
+
+\end{document}
