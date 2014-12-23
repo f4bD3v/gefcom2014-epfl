@@ -18,7 +18,7 @@ spec <- matrix(
 	'units', 'u', 2, 'integer',
 	'hidden', 'hu', 2, 'integer',# 'number of units in single hidden layer (nnet package)',
 	'ntree', 'nt', 2, 'integer'),# 'number of trees in RF'
-byrow=TRUE, nrow=7, ncol=4);
+byrow=TRUE, nrow=9, ncol=4);
 spec.dim=dim(spec)
 spec.opt.long=spec[,1]
 spec.opt.short=spec[,2]
@@ -64,9 +64,9 @@ if(is.null(opt$gamma)) {
 	gamma <- opt$gamma
 }
 
-k <- 1
+gam.model <- 1
 if(!is.null(opt$model)) {
-	k <- as.numeric(opt$model)
+	gam.model <- opt$model
 }
 
 ### call: Rscript loadCV.R --args [#model]
@@ -203,7 +203,9 @@ if (!dir.exists(loadf.subfolder.path)) dir.create(loadf.subfolder.path, showWarn
 # same for temperature?
 if(pred.method == "GAM") {
 	subfolder.path <- paste(subfolder.path, "gam", sep="/")
-	if (!dir.exists(subfolder.path)) dir.create(subfolder.path, showWarnings = TRUE, recursive = FALSE, mode = "0777")
+	createDir(subfolder.path)
+	subfolder.path <- paste(subfolder.path, paste0("model", gam.model), sep="/")
+	createDir(subfolder.path)
 	if(gamma) {
 		subfolder.path <- paste(subfolder.path, "gamma", sep="/")
 		if (!dir.exists(subfolder.path)) dir.create(subfolder.path, showWarnings = TRUE, recursive = FALSE, mode = "01000")
@@ -224,7 +226,7 @@ if(pred.method == "GAM") {
 }
 
 # - model folder
-subfolder <- "models"
+subfolder <- "model-instances"
 model.path <- paste(subfolder.path, subfolder, sep="/")
 if (!dir.exists(model.path)) dir.create(model.path, showWarnings = TRUE, recursive = FALSE, mode = "0777")
 
@@ -236,9 +238,9 @@ file.copy(from='util/plot_helpers.R', to=subfolder.path)
 str.htype <- htypeToString(htype)
 
 #* csv
-fn.csv <- paste0(paste("temp-model", "gam", "scores", pred.type, sep="_"), ".csv")
+fn.csv <- paste0(paste("temp-model", "gam", temp.model, "scores", pred.type, sep="_"), ".csv")
 if(temp.gamma) {
-	fn.csv <- paste0(paste("temp-model", "gam", "gamma", "scores", pred.type, sep="_"), ".csv")
+	fn.csv <- paste0(paste("temp-model", "gam", temp.model, "gamma", "scores", pred.type, sep="_"), ".csv")
 }
 output.file <- paste(subfolder.path, fn.csv, sep="/")
 
@@ -273,8 +275,8 @@ res <- list()
 
 #-- PRINT LOAD MODEL TYPE TO FILE
 if(pred.method == "GAM") {
-	load.model.formula <- gam.load.models[[k]]
-	load.model.chr <- paste0("GAM Load Model ", k, ": ", load.model.formula)
+	load.model.formula <- gam.load.models[[gam.model]]
+	load.model.chr <- paste0("GAM Load Model ", gam.model, ": ", load.model.formula)
 } else if(pred.method == "LM") {
 	load.model.formula <- lm.load.models[[1]]
 	load.model.chr <- paste0("LM Load Model: ", load.model.formula)
@@ -329,24 +331,14 @@ for(i in 1:2) {
   temp.model.file <- temp.model.files[grepl(sinterval, temp.model.files)]
   print(temp.model.file)
   pred.temp <- readRDS(temp.model.file)
-  print(nrow(pred.temp))
-  print(head(pred.temp))
-  print(tail(pred.temp))
-  print(nrow(cut.temp))
-  print(head(cut.temp))
-  print(tail(cut.temp))
-  print(nrow(avg.temp))
-  print(head(avg.temp))
-  print(tail(avg.temp))
 
-  return()
   pred.temp <- pred.temp[,c(1,2,4)]
   colnames(pred.temp) <- c("TMS", "MTEMP", "HASH")
   avg.temp <- rbind(cut.temp, pred.temp)
   rownames(avg.temp) <- NULL
 
   #-- PRINT TEMP MODEL TYPE TO FILE
-  temp.model.chr <- paste0(interval, " Temp Model ", temp.model, ": ", temp.model.formulas[[temp.model]])
+  temp.model.chr <- paste0(sinterval, " Temp Model ", temp.model, ": ", temp.model.formulas[[temp.model]])
   # temp train month len stays the same and is defined by config
   temp.train.chr <- paste0("Temp Model Training Length: ", temp.train.month.len, " ", str.htype)
   appendToFile(temp.model.chr, output.file)
@@ -361,7 +353,6 @@ for(i in 1:2) {
   # write function to parse pred.type and model
 
   #### TODO: CHECK IF THERE IS PROBLEM WITH AVG.TEMP IN LOOP
-  test.month.len <- 2
 
   ### CROSS VALIDATION ###
   for (j in 1:test.month.len) {
@@ -398,7 +389,7 @@ for(i in 1:2) {
 			train.result <- trainLoadModelFormulaRF(load.train.features[,-1], load.model.formula, load.train.dt, ntrees)
 		}
 		load.model <- train.result[["model"]]  
-		load.model.fn <- paste(model.path, paste0(paste("temp-model", temp.model, interval, "instance", j, pred.type, sep="_"), ".txt"), sep="/")
+		load.model.fn <- paste(model.path, paste0(paste("temp-model", "gam", temp.model, interval, "instance", j, pred.type, sep="_"), ".txt"), sep="/")
 		capture.output(summary(load.model), file=load.model.fn)
 		
 		#** CREATE PREDICTION **#
@@ -431,7 +422,7 @@ for(i in 1:2) {
 
 			attr(load.res.row, 'htype') <- htypeToString(htype)
 			attr(load.res.row, 'horizon') <- test.horizon 
-			load.res.row.fn <- paste0(paste("temp-model", temp.model, interval, pred.type, "?", "load-fit-target", "instance", j, sep="_"), ".rds")
+			load.res.row.fn <- paste0(paste("temp-model", "gam", temp.model, interval, pred.type, "?", "load-fit-target", "instance", j, sep="_"), ".rds")
 			saveRDS(load.res.row, file=paste(subfolder.path, load.res.row.fn, sep="/"), compress=TRUE)
 		}
 
@@ -505,7 +496,7 @@ for(i in 1:2) {
 
   attr(load.res, 'htype') <- htypeToString(htype)
   attr(load.res, 'horizon') <- test.month.len 
-  load.res.fn <- paste0(paste("temp-model",  temp.model, interval, test.month.len, "all", pred.type, "?", "fit-target", "instance", h, sep="_"), ".rds")
+  load.res.fn <- paste0(paste("temp-model", "gam", temp.model, interval, test.month.len, "all", pred.type, "?", "fit-target", "instance", h, sep="_"), ".rds")
   saveRDS(load.res, file=paste(subfolder.path, load.res.fn, sep="/"), compress=TRUE)
 
 
@@ -528,17 +519,17 @@ for(i in 1:2) {
 	scores.subfolder.path <- paste(subfolder.path, "scores", sep="/")
 	if (!dir.exists(scores.subfolder.path)) dir.create(scores.subfolder.path, showWarnings = TRUE, recursive = FALSE, mode = "0777")
 	if (h==1) {
-		scores.fn <- paste0(paste("tempm", temp.model, interval, "scores", "1m", sep="_"), ".rds")
+		scores.fn <- paste0(paste("tempm", "gam", temp.model, interval, "scores", "1m", sep="_"), ".rds")
 
 		col <- position.board[1:test.month.len, 1:6]
 		comp <- col
 	} else if (h==2) {
-		scores.fn <- paste0(paste("tempm", temp.model, interval, "scores", "5wrest", sep="_"), ".rds")
+		scores.fn <- paste0(paste("tempm", "gam", temp.model, interval, "scores", "5wrest", sep="_"), ".rds")
 	} else {
 		var.set <- loop.vars[[h-1]]
 		htype = var.set[1]
 		test.horizon = var.set[2]
-		scores.fn <- paste0(paste("tempm", temp.model, interval, "scores", getPredictionType(htype, test.horizon), sep="_"), ".rds")
+		scores.fn <- paste0(paste("tempm", "gam", temp.model, interval, "scores", getPredictionType(htype, test.horizon), sep="_"), ".rds")
 
 		sb <- score.board[[h]]
 		col <- sb$MAPE[1:test.month.len]
@@ -579,7 +570,7 @@ for(i in 1:2) {
   appendTableToFile(comparison.board, output.file)
   cat("\n", file = output.file, append = TRUE)
 
-  comparison.board.fn <- paste0(paste("comparison_board_tempm", temp.model, interval, sep="_"), ".rds")
+  comparison.board.fn <- paste0(paste("comparison_board_tempm", "gam", temp.model, interval, sep="_"), ".rds")
   saveRDS(comparison.board, file=paste(scores.subfolder.path, comparison.board.fn, sep="/"), compress=TRUE)
   
   ### IMPORTANT: RESET DATES ###

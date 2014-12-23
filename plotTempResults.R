@@ -20,7 +20,7 @@ plotRDS <- function(df, htype, horizon) {
 	# - chunks
 	# - xlabel, ylabel, title
 	# xlabel = paste(start.date, "-", end.date, sep=" ")
-	plotPredictionResiduals(tms, target, fit, residuals, chunks, "Time in Hours", "Temp in Fahrenheit", "Temp Prediction")
+	plotPredictionResiduals(tms, target, fit, residuals, chunks, "Time in Hours", "Temp in Fahrenheit", "Temp Prediction", c(0,120))
 }
 
 path <- '.'
@@ -39,7 +39,7 @@ for(rds.file in files) {
 
 	res.df <- data.frame(TMS=tms, FIT=res.df[,2], TARGET=res.df[,3])
 
-	prefix <- substring(rds.file, 2, nchar(prefix))
+	prefix <- substring(rds.file, 3, nchar(rds.file)-4)
 
 	if(grepl('all', rds.file)) {
 		fn.pdf <- paste0(paste("all-plots", prefix, start.date, end.date, sep="_"), ".pdf")

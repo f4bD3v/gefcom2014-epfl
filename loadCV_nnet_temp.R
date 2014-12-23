@@ -299,7 +299,6 @@ print(temp.methods.files)
 index <- which(avg.temp$HASH==hashDtYear(load.train.start.dt))
 cut.temp <- avg.temp[-c(index:nrow(avg.temp)), ]
 
-test.month.len <- 2
 # TRUE TEMPERATURE AS ADDITIONAL MODEL
 
 #########################
@@ -356,7 +355,6 @@ for(m in 1:length(temp.methods)) {
 		# write function to parse pred.type and model
 
 		#### TODO: CHECK IF THERE IS PROBLEM WITH AVG.TEMP IN LOOP
-		test.month.len <- 2
 
 		### CROSS VALIDATION ###
 		for (j in 1:test.month.len) {

@@ -22,7 +22,7 @@ plotValidation <- function(fit, xlabel, ylabel, title) {
   # residuals
 }
 
-plotPredictionResiduals <- function(tms, target, fit, residuals, chunks, xlabel, ylabel, title) {
+plotPredictionResiduals <- function(tms, target, fit, residuals, chunks, xlabel, ylabel, title, ylimits) {
   listToChunks <- function(x, n) { split(x, cut(1:length(x), n, labels=FALSE)) }
   #matrixToChunks <- function(x, n) { split(as.data.frame(x), cut(1:nrow(x), n, labels=FALSE)) }
   target.chunks <- listToChunks(target, chunks)
@@ -33,7 +33,7 @@ plotPredictionResiduals <- function(tms, target, fit, residuals, chunks, xlabel,
   length.chunk <- length(residuals.chunks)
 
   for(k in 1:chunks) {
-    plot(fit.chunks[[k]] ~ tms.chunks[[k]], col="red", type="l", ylim=c(40, 320), xlab=xlabel, ylab=ylabel, main=title)  
+    plot(fit.chunks[[k]] ~ tms.chunks[[k]], col="red", type="l", ylim=ylimits, xlab=xlabel, ylab=ylabel, main=title)  
     # or, only plot for indices in q.seq
     #lines(rep(mean(residuals)+offset, length(tms.chunks[[k]])) ~ tms.chunks[[k]], col="blue", type="l")
     #lines(residuals.chunks[[k]]+offset ~ tms.chunks[[k]], col="red", type="l")
@@ -41,7 +41,6 @@ plotPredictionResiduals <- function(tms, target, fit, residuals, chunks, xlabel,
     lines(target.chunks[[k]] ~ tms.chunks[[k]], col="black", type="l")
     axis.Date(1, at=tms.chunks[[k]][mday(tms.chunks[[k]])%%7==1], format="%d-%m-%Y")
   }
-
 }
 
 plotPredictionQuantiles <- function(tms, target, fit, fit.quantiles, chunks, xlabel, ylabel, title) {

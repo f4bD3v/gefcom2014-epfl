@@ -1,6 +1,5 @@
 loadCSVs <- function(path) {
   files <- dir(path, pattern = '\\.csv', full.names = TRUE)
-  print(files)
   files <- files[order(nchar(files), files)]
   print(files)
   tables <- lapply(files, read.csv)

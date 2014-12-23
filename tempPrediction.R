@@ -1,12 +1,14 @@
 library("getopt")
 
 spec <- matrix(
-	c('predMethod', 'pm', 1, 'character',# 'the prediction method to be used (LM, GAM, NN, RF)',
-	'predTrainTemp', 'ptt', 1, 'logical',# 'predict temperature for training period',
-	'model', 'm', 2, 'integer',# 'load model',
-	'gamma', 'g', 2, 'logical',# 'number of trees in RF'
-	'hidden', 'hu', 2, 'integer',# 'number of units in single hidden layer (nnet package)',
-	'ntree', 'nt', 2, 'integer'),# 'number of trees in RF'
+	c('predMethod', 'pm', 1, 'character', # temperature prediction method
+	'predTrain', 'pt', 1, 'logical',# 'predict temperature for training period',
+	'formula', 'f', 2, 'integer', 
+	'gamma', 'g', 2, 'logical',
+	'hiddenUnits', 'hu', 2, 'integer',# 'number of units in single hidden layer (nnet package)',
+	'ntrees', 'nt', 2, 'integer',
+	'PCA', 'p', 2, 'logical'), # use principal component of weather stations as opposed to average
+	'station', 's', 2, 'integer'), # use specific weather station as opposed to principal component or average
 byrow=TRUE, nrow=6, ncol=4);
 spec.dim=dim(spec)
 spec.opt.long=spec[,1]
@@ -187,7 +189,7 @@ file.copy(from='plotTempResults.R', to=subfolder.path)
 str.htype <- htypeToString(htype)
 
 #* csv
-fn.csv <- paste0(paste("results", pred.type, sep="_"), ".csv")
+fn.csv <- paste0(paste("temp-model", k, "results", pred.type, sep="_"), ".csv")
 output.file <- paste(subfolder.path, fn.csv, sep="/")
 
 
@@ -195,9 +197,6 @@ output.file <- paste(subfolder.path, fn.csv, sep="/")
 temp.features <- createTempFeatures(avg.temp, temp.train.dt, temp.train.month.len + test.month.len)
 temp.features.fn <- paste0("all-temp-features", ".rds")
 saveRDS(temp.features, file=paste(tempf.path, temp.features.fn, sep="/"), compress=TRUE)
-
-saveRDS(temp.features, file='all-temp-features.rds', compress=TRUE)
-
 
 #** CREATE LOOP VARS MONTH AND WEEK PREDICTIONS
 loop.vars = list(c(2,1),
@@ -234,12 +233,6 @@ cat("\n", file = output.file, append = TRUE)
 ### CROSS VALIDATION ###
 ########################
 PINBALL <- c()
-#-- PRINT TEMP MODEL TYPE TO FILE
-temp.model.chr <- paste0("Temp Model : ", temp.model.formula)
-temp.train.chr <- paste0("Temp Model Training Length: ", temp.train.month.len, " ", str.htype)
-appendToFile(temp.model.chr, output.file)
-appendToFile(temp.train.chr, output.file)
-cat("\n", file = output.file, append = TRUE)
 #-------------------------------
 
 #### TODO: CHECK IF THERE IS PROBLEM WITH AVG.TEMP IN LOOP
@@ -290,17 +283,15 @@ for(j in 1:pred.run.len) {
 		if(h==1) { 
 			if (j == 1) temp.res[[h]] <- temp.res.row else temp.res[[h]] <- rbind(temp.res[[h]], temp.res.row)
 			first.rest <- 4*7*24+1
-			rest <- FALSE
+			restl <- FALSE
 			if(first.rest < nrow(temp.res.row)) {
-				rest <- TRUE
+				restl <- TRUE
 				rest.days <- c(first.rest:nrow(temp.res.row))
 				rest <- temp.res.row[rest.days,]
 			}
 		} else {
 			if (j == 1 && h==2) temp.res[[2]] <- temp.res.row else temp.res[[2]] <- rbind(temp.res[[2]], temp.res.row)
-			if (h==5 && rest == TRUE) temp.res[[2]] <- rbind(temp.res[[2]], rest)
-			print(head(temp.res[[2]]))
-			print(tail(temp.res[[2]]))
+			if (h==5 && restl == TRUE) temp.res[[2]] <- rbind(temp.res[[2]], rest)
 		}
 		
 		# TO SAVE OR NOT TO SAVE HERE?
@@ -438,7 +429,7 @@ if(pred.traintemp) {
 	temp.res.fn <- paste0(paste("predtrain", paste0("model", k), "weekly", "temp-fit-target", sep="_"), ".rds")
 	saveRDS(temp.res.h2, file=paste(subfolder.path, temp.res.fn, sep="/"), compress=TRUE)
 
-	first.index <- which(temp.res.h$HASH==hashDtYear(test.start.dt), arr.ind=TRUE)
+	first.index <- which(temp.res.h2$HASH==hashDtYear(test.start.dt), arr.ind=TRUE)
 	temp.res.h2 <- temp.res.h2[first.index:nrow(temp.res.h2), ]
 
 	attr(temp.res.h2, 'htype') <- htypeToString(htype)

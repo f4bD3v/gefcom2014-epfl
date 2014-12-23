@@ -52,9 +52,9 @@ if(is.null(opt$gamma)) {
 	gamma <- opt$gamma
 }
 
-k <- 1
+gam.model <- 1
 if(!is.null(opt$model)) {
-	k <- as.numeric(opt$model)
+	gam.model <- opt$model
 }
 
 ### call: Rscript loadCV.R --args [#model]
@@ -191,7 +191,9 @@ if (!dir.exists(loadf.subfolder.path)) dir.create(loadf.subfolder.path, showWarn
 # same for temperature?
 if(pred.method == "GAM") {
 	subfolder.path <- paste(subfolder.path, "gam", sep="/")
-	if (!dir.exists(subfolder.path)) dir.create(subfolder.path, showWarnings = TRUE, recursive = FALSE, mode = "0777")
+	createDir(subfolder.path)
+	subfolder.path <- paste(subfolder.path, paste0("model", gam.model), sep="/")
+	createDir(subfolder.path)
 	if(gamma) {
 		subfolder.path <- paste(subfolder.path, "gamma", sep="/")
 		if (!dir.exists(subfolder.path)) dir.create(subfolder.path, showWarnings = TRUE, recursive = FALSE, mode = "01000")
@@ -260,8 +262,8 @@ res <- list()
 
 #-- PRINT LOAD MODEL TYPE TO FILE
 if(pred.method == "GAM") {
-	load.model.formula <- gam.load.models[[k]]
-	load.model.chr <- paste0("GAM Load Model ", k, ": ", load.model.formula)
+	load.model.formula <- gam.load.models[[gam.model]]
+	load.model.chr <- paste0("GAM Load Model ", gam.model, ": ", load.model.formula)
 } else if(pred.method == "LM") {
 	load.model.formula <- lm.load.models[[1]]
 	load.model.chr <- paste0("LM Load Model: ", load.model.formula)
@@ -282,8 +284,6 @@ cat("\n", file = output.file, append = TRUE)
 ### CROSS VALIDATION ###
 ########################
 temp.model.formulas <- list("TRUETEMP", "LAGMEAN")
-
-test.month.len <- 2
 
 temp.model <- "t"
 interval <- "daily"

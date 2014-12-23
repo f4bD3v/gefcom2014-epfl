@@ -22,6 +22,8 @@ nnet.temp.models <- list("DLAG + WLAG52 + TOY + HOUR")
 
 randomforest.temp.models <- list("DLAG + WLAG52 + TOY + HOUR")
 
+#temp.methods.formulas <- list(GAM=gam.temp.formulas, LM=lm.temp.formulas, NN=gam
+
 ### LOAD MODELS ###
 
 ### GAM LOAD MODELS ###

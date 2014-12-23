@@ -34,54 +34,160 @@ aschr <- function(date) {
   return(as.character(date))
 }
 
+writeLoadHeader <- function(scores.path, load.method, load.method.formula, interval, load.train.month.len, str.htype, load.train.start.dt) {
+	load.method.str <- paste0("Load Method ", load.method.names[[load.method]], "; ", interval, " prediction intervals; using formula: ", load.method.formula) 
+	load.train.str <- paste0("Load Model Training Length: ", load.train.month.len, " ", str.htype, " starting ", load.train.start.dt)
+	print(scores.path)
+	writeToFile(load.method.str, scores.path)
+	appendToFile(load.train.str, scores.path)
+	cat("\n", file=scores.path, append = TRUE)
+}
+
+writeTempHeader <- function(scores.path, temp.method, temp.method.formula, interval, train.start.dt, train.stop.dt, temp.train.len, str.htype) { 
+	print(scores.path)
+	print(interval)
+	print(temp.method.formula)
+	temp.model.str <- paste0("Temp Method ", temp.method, "; ", interval, " prediction intervals; using formula: ", temp.method.formula)
+	temp.train.str <- paste0("Temp Training Period: ", as.character(as.Date(train.start.dt)), "-", as.character(as.Date(train.stop.dt)), "; Length: ", temp.train.len, " ", str.htype)
+	print(scores.path)
+	writeToFile(temp.model.str, scores.path)
+	appendToFile(temp.train.str, scores.path)
+	cat("\n", file=scores.path, append = TRUE)
+}
+
+
+writeLoadTempHeader <- function(scores.path, no.temp.formula, temp.method, temp.method.formula, pred.temp, interval) {
+	if(no.temp.formula) {
+		temp.model.str <- paste0("Temp Source ", temp.method)
+		temp.train.str <- paste0("No model training necessary")
+	} else {
+		### TODO INCLUDE OPTIONS
+		temp.model.str <- paste0("Temp Method ", temp.method, "; ", interval, " prediction intervals; using formula: ", temp.method.formula)
+		### TODO: GET temp.train.month.len from .rds attribute, as well as first date and last date
+		temp.start.dt <- attr(pred.temp, "train.start")
+		temp.stop.dt <- attr(pred.temp, "train.stop")
+		temp.len <- attr(pred.temp, "train.len")
+		temp.str.htype <- attr(pred.temp, "str.htype")
+		temp.train.str <- paste0("Temp Training Period: ", as.character(as.Date(temp.start.dt)), "-", as.character(as.Date(temp.stop.dt)), "; Length: ", temp.len, " ", str.htype)
+	}
+	print(scores.path)
+	appendToFile(temp.model.str, scores.path)
+	appendToFile(temp.train.str, scores.path)
+	cat("\n", file=scores.path, append = TRUE)
+}
+
+underscoreJoin <- function(elem1, elem2) {
+	elem <- paste(elem1, elem2, sep="_")
+	return(elem)
+}
+
+pathJoin <- function(path1, path2) {
+	path <- paste(path1, path2, sep="/")
+	return(path)
+}
+
+extensionJoin <- function(filename, extension) {
+	filename <- paste0(filename, ".", extension)
+	return(filename)
+}
+
 createDir <- function(folder.path) {
 	if (!dir.exists(folder.path)) dir.create(folder.path, showWarnings = TRUE, recursive = FALSE, mode = "0777")
 }
 
-tempPrediction <- function(k, j, model.path, tempf.path, features, model.formula, train.start, pred.start, lag.horizon, train.horizon, pred.horizon, htype, gamma) {
-	train.features <- getFeatures(features, train.start, lag.horizon, train.horizon, htype)
-	test.features <- getFeatures(features, pred.start, lag.horizon, pred.horizon, htype)
+createBaseFolder <- function(out.path, test.start.dt, test.stop.dt) {
+	test.first <- format(test.start.dt, "%d-%m-%Y")
+	test.last <- format(test.stop.dt, "%d-%m-%Y")
 
-	train.features.fn <- paste0(paste("train-temp-features", "instance", j, pred.type, sep="_"), ".rds")
-	saveRDS(train.features, file=paste(tempf.path, train.features.fn, sep="/"), compress=TRUE)
-	test.features.fn <- paste0(paste("test-temp-features", "instance", j, pred.type, sep="_"), ".rds")
-	saveRDS(test.features, file=paste(tempf.path, test.features.fn, sep="/"), compress=TRUE)
+	folder <- underscoreJoin(aschr(test.first), aschr(test.last))
+	folder.path <- pathJoin(out.path, folder)
+	createDir(folder.path)
+	return(folder.path)
+}
 
-	pred.stop <- getStopDtByHorizon(pred.start, pred.horizon, htype)
-	test.dt.seq <- seq(pred.start, pred.stop, by="hour")
-	first <- hashDtYear(test.dt.seq)[1]
-	second <- hashDtYear(test.dt.seq)[length(test.dt.seq)]
-	index1 <- which(features$HASH==first, arr.ind=TRUE)
-	index2 <- which(features$HASH==second, arr.ind=TRUE)
-
-	#** CREATE & SAVE LOAD MODEL **#
-	if(model.formula == "mean") {
-		fit <- temp.features[index1:index2, "LAGM"]      
-	} else {
-		if(pred.method == "LM") {
-			train.result <- trainTempModelFormulaLM(train.features[,-1], model.formula, train.start)
-			temp.model <- train.result[["model"]]  
-			fit <- predict.lm(temp.model, test.features[, -(1:2)])
-		} else if(pred.method == "GAM") {
-			train.result <- trainTempModelFormulaGAM(train.features[,-1], model.formula, train.start, gamma)
-			temp.model <- train.result[["model"]]  
-			fit <- predict.gam(temp.model, test.features[, -(1:2)])
-		} else if(pred.method == "NN") {
-			train.result <- trainTempModelFormulaNN(train.features[,-1], model.formula, train.start, hidden)
-			temp.model <- train.result[["model"]]  
-			fit <- predict(temp.model, test.features[, -(1:2)])
-		} else if(pred.method == "RF") {
-			train.result <- trainTempModelFormulaRF(train.features[,-1], model.formula, train.start, ntrees)
-			temp.model <- train.result[["model"]]  
-			fit <- predict(temp.model, test.features[, -(1:2)])
-		}
-		target <- temp.features[index1:index2, 2]
-		temp.model.fn <- paste(model.path, paste0(paste("model", k, "instance", j, pred.type, sep="_"), ".txt"), sep="/")
-		capture.output(summary(temp.model), file=temp.model.fn)
+createMethodFolder <- function(base.path, type, pred.method, method.option, formula, PCA, station) {
+	path <- pathJoin(base.path, type)
+	createDir(path)
+	folder <- pred.method
+	print(pred.method)
+	if(PCA) {
+		folder <- underscoreJoin(pred.method, "PCA")
+	} else if(station) {
+		folder <- underscoreJoin(pred.method, paste0("Station", station))
 	}
-	train.residuals <- train.result[["residuals"]]
-	test.quantiles <- createPredQuantiles(fit, train.residuals)
-		
-	fit <- data.frame(TMS=test.dt.seq, FIT=fit, TARGET=target, HASH=hashDtYear(test.dt.seq))
-	return(list(fit, test.quantiles))
+	print(folder)
+	method.path <- pathJoin(path, folder)
+	createDir(method.path)
+	if(method.option != "NONE") {
+		option <- method.option
+		# hidden unit, ntree case
+		method.path <- pathJoin(method.path, option)
+		createDir(method.path)
+	}
+	if(formula != "NONE") {
+		formula <- underscoreJoin("formula", formula)
+		method.path <- pathJoin(method.path, formula)
+		createDir(method.path)
+	}
+	return(method.path)
+}
+
+createFolder <- function(base.path, folder.name) {
+	path <- pathJoin(base.path, folder.name)
+	createDir(path)
+	return(path)
+}
+
+getTempMethodPaths <- function(temp.method.path, temp.method, temp.method.option, no.temp.formula) {
+	temp.method.options <- list()
+	temp.method.options.paths <- list()
+	temp.method.formulas <- list()
+	temp.method.formulas.paths <- list()
+	if(temp.method.option == "NONE") {
+		temp.method.options.paths <- list(pathJoin(temp.method.path, temp.method))
+		temp.method.options <- list(temp.method)
+		dirs <- list.dirs(temp.method.path, full.names = TRUE, recursive=FALSE)
+  		dirs <- dirs[order(nchar(dirs), dirs)]
+  		if(no.temp.formula) {
+			temp.method.formulas.paths[[temp.method]] <- list(temp.method.path)
+			temp.method.formulas[[temp.method]] <- list(temp.method)
+		} else {
+			temp.method.formulas.paths[[temp.method]] <- list()
+			temp.method.formulas[[temp.method]] <- list()
+		}
+		formula.count <- 1
+		for(dir in dirs) {
+			if(grepl('formula', dir)) {
+				print(dir)
+				temp.method.formulas.paths[[temp.method]][[formula.count]] <- dir
+				temp.method.formulas[[temp.method]][[formula.count]] <- temp.methods.formulas[[temp.method]][[formula.count]]
+				formula.count <- formula.count + 1
+			}		
+		}
+	} else {
+		dirs <- list.dirs(temp.method.path, full.names = TRUE, recursive=FALSE)
+  		dirs <- dirs[order(nchar(dirs), dirs)]
+		option.count <- 1
+		for(dir in dirs) {
+			if(grepl('(hidden-units|ntrees)')) {
+				temp.method.options.paths[[option.count]] <- dir
+				option.count <- option.count + 1
+				dir.parts <- strsplit(dir, "/")[[1]]
+				option.name <- dir.parts[length(dir.parts)]
+				temp.method.options[[option.count]] <- option.name
+				sub.dirs <- list.dirs(dir, full.names = TRUE, recursive=FALSE)
+				temp.method.formulas.paths[[option.name]] <- list()
+				temp.method.formulas[[option.name]] <- list()
+				formula.count <- 1
+				for(sub.dir in sub.dirs) {
+					if(grepl('formula')) {
+						temp.method.formulas.paths[[option.name]][[formula.count]] <- sub.dir
+						temp.method.formulas[[option.name]][[formula.count]] <- temp.methods.formulas[[temp.method]][[formula.count]]
+						formula.count <- formula.count + 1
+					}
+				}
+			}
+		}
+	}
+	return(list(temp.method.options.paths, temp.method.options, temp.method.formulas.paths, temp.method.formulas))
 }

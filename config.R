@@ -1,4 +1,5 @@
 ### GEFCOM PROJECT CONFIG ###
+source("/home/fbrix/gefcom2014-epfl/util/date_helpers.R")
 
 #** SET FIRST AND LAST DATES OF TRAINING SET **#
 first.dt <- as.POSIXct("01/01/2001 01:00", format="%m/%d/%Y %H:%M", tz="EST")
@@ -15,3 +16,44 @@ holidays_2011 <- c("12/26/2011", "11/24/2011", "11/11/2011", "10/10/2011", "09/0
 holidays <- c(holidays_2005, holidays_2006, holidays_2007, holidays_2008, holidays_2009, holidays_2010, holidays_2011)
 holidays <- as.Date(holidays, format="%m/%d/%Y")
 holidays <- as.character(holidays)
+
+### DEFINE DATES & HORIZON ###
+
+#** TEST DATES **#
+test.month.len <- 13
+
+test.stop.dt <- last.dt 
+test.start.dt <- subMonths(addHours(test.stop.dt, 1), test.month.len)
+test.dt <- test.start.dt
+last.test.dt <- test.dt
+cat(paste0("Test Start Dt: ", test.start.dt), sep="\n")
+cat(paste0("Test Stop Dt: ", test.stop.dt), sep="\n")
+cat("\n")
+
+#** TEMP TRAINING DATES **#
+temp.train.year.len <- 7
+
+temp.train.stop.dt <- subHour(test.start.dt)
+temp.train.start.dt <- subYears(test.start.dt, temp.train.year.len)
+
+cat(paste0("Train Start Dt: ", temp.train.start.dt), sep="\n")
+cat(paste0("Train Stop Dt: ", temp.train.stop.dt), sep="\n")
+cat("\n")
+temp.train.dt <- temp.train.start.dt
+
+temp.train.month.len <- temp.train.year.len * 12
+
+#** LOAD TRAINING SET **#
+load.train.year.len <- 4
+
+load.train.stop.dt <- temp.train.stop.dt
+load.train.start.dt <- subYears(test.start.dt, load.train.year.len)
+load.train.dt <- load.train.start.dt
+last.load.train.dt <- load.train.dt
+cat(paste0("Load Train Start Dt: ", load.train.dt), sep="\n")
+cat("\n")
+
+load.train.month.len <- load.train.year.len * 12
+################################################
+
+

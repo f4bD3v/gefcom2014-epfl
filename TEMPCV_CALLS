@@ -1,0 +1,22 @@
+Rscript TEMPCV.R --predMethod GAM --predTrain TRUE --formula 1
+Rscript TEMPCV.R --predMethod GAM --predTrain TRUE --station 1 --formula 1
+Rscript TEMPCV.R --predMethod GAM --predTrain TRUE --PCA TRUE --formula 1
+Rscript TEMPCV.R --predMethod GAM --predTrain TRUE --formula 2
+Rscript TEMPCV.R --predMethod GAM --predTrain TRUE --formula 3
+
+Rscript TEMPCV.R --predMethod GAM --gamma TRUE --predTrain TRUE --formula 1
+Rscript TEMPCV.R --predMethod GAM --gamma TRUE --predTrain TRUE --formula 2
+Rscript TEMPCV.R --predMethod GAM --gamma TRUE --predTrain TRUE --formula 3
+
+Rscript TEMPCV.R --predMethod LM --predTrain TRUE --formula 1
+
+Rscript TEMPCV.R --predMethod NN --predTrain TRUE --hiddenUnits 20 --formula 1
+Rscript TEMPCV.R --predMethod NN --predTrain TRUE --hiddenUnits 25 --formula 1
+Rscript TEMPCV.R --predMethod NN --predTrain TRUE --hiddenUnits 30 --formula 1
+
+Rscript TEMPCV.R --predMethod RF --predTrain TRUE --ntrees 50 --formula 1
+Rscript TEMPCV.R --predMethod RF --predTrain TRUE --ntrees 100 --formula 1
+Rscript TEMPCV.R --predMethod RF --predTrain TRUE --ntress 150 --formula 1
+Rscript TEMPCV.R --predMethod RF --predTrain TRUE --ntress 500 --formula 1
+
+

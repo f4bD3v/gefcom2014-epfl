@@ -10,17 +10,57 @@ Rscript tempPrediction.R --predTrainTemp TRUE --predMethod NN --hidden 20
 Rscript tempPrediction.R --predTrainTemp TRUE --predMethod RF --ntree 50
 Rscript tempPrediction.R --predTrainTemp TRUE --predMethod RF --ntree 100
 Rscript tempPrediction.R --predTrainTemp TRUE --predMethod RF --ntree 300
+Rscript tempPrediction.R --predTrainTemp TRUE --predMethod RF --ntree 500
 
 
-Rscript detached_loadCV.R --predTemp TRUE --predTrainTemp TRUE --predMethod GAM --model 2 --htype 2 --units 1
-Rscript detached_loadCV.R --predTemp TRUE --predTrainTemp TRUE --predMethod GAM --model 2 --gamma TRUE --htype 2 --units 1
 
-Rscript detached_loadCV.R --predTemp TRUE --predTrainTemp TRUE --predMethod LM --htype 2 --units 1
 
-Rscript detached_loadCV.R --predTemp TRUE --predTrainTemp TRUE --predMethod NN --hidden 5 --htype 2 --units 1
-Rscript detached_loadCV.R --predTemp TRUE --predTrainTemp TRUE --predMethod NN --hidden 10 --htype 2 --units 1
-Rscript detached_loadCV.R --predTemp TRUE --predTrainTemp TRUE --predMethod NN --hidden 20 --htype 2 --units 1
+MEAN-TRUE --> GAM
+Rscript loadCV_mean-true_temp.R --predMethod GAM --model 1 --htype 2 --units 1
+Rscript loadCV_mean-true_temp.R --predMethod GAM --model 2 --htype 2 --units 1
+Rscript loadCV_mean-true_temp.R --predMethod GAM --model 3 --htype 2 --units 1
 
-Rscript detached_loadCV.R --predTemp TRUE --predTrainTemp TRUE --predMethod RF --ntree 50 --htype 2 --units 1
-Rscript detached_loadCV.R --predTemp TRUE --predTrainTemp TRUE --predMethod RF --ntree 100 --htype 2 --units 1
-Rscript detached_loadCV.R --predTemp TRUE --predTrainTemp TRUE --predMethod RF --ntree 300 --htype 2 --units 1
+MEAN-TRUE --> NN
+Rscript loadCV_mean-true_temp.R --predMethod NN --hidden 5 --htype 2 --units 1
+Rscript loadCV_mean-true_temp.R --predMethod NN --hidden 10 --htype 2 --units 1
+Rscript loadCV_mean-true_temp.R --predMethod NN --hidden 20 --htype 2 --units 1
+
+MEAN-TRUE --> RF
+Rscript loadCV_mean-true_temp.R --predMethod RF --ntrees 50 --htype 2 --units 1
+Rscript loadCV_mean-true_temp.R --predMethod RF --ntrees 100 --htype 2 --units 1
+Rscript loadCV_mean-true_temp.R --predMethod RF --ntrees 500 --htype 2 --units 1
+
+
+GAM -> GAM
+# will have to rerun these
+Rscript loadCV_gam_temp.R --predMethod GAM --model 1 --tempModel 2 --htype 2 --units 1
+Rscript loadCV_gam_temp.R --predMethod GAM --model 2 --tempModel 2 --htype 2 --units 1
+Rscript loadCV_gam_temp.R --predMethod GAM --model 3 --tempModel 2 --htype 2 --units 1
+running
+
+GAM -> NN
+Rscript loadCV_gam_temp.R --predMethod NN --hidden 5 --tempModel 2 --htype 2 --units 1
+Rscript loadCV_gam_temp.R --predMethod NN --hidden 10 --tempModel 2 --htype 2 --units 1
+Rscript loadCV_gam_temp.R --predMethod NN --hidden 20 --tempModel 2 --htype 2 --units 1
+run
+
+GAM -> RF
+Rscript loadCV_gam_temp.R --predMethod RF --ntree 50 --tempModel 2 --htype 2 --units 1
+Rscript loadCV_gam_temp.R --predMethod RF --ntree 100 --tempModel 2 --htype 2 --units 1
+Rscript loadCV_gam_temp.R --predMethod RF --ntree 500 --tempModel 2 --htype 2 --units 1
+run
+
+
+NN --> GAM
+Rscript loadCV_nnet_temp.R --predMethod GAM --model 1 --tempModel 1 --htype 2 --units 1
+Rscript loadCV_nnet_temp.R --predMethod GAM --model 2 --tempModel 1 --htype 2 --units 1
+Rscript loadCV_nnet_temp.R --predMethod GAM --model 3 --tempModel 1 --htype 2 --units 1
+running
+
+NN --> NN
+Rscript loadCV_nnet_temp.R --predMethod NN --hidden 5 --tempModel 1 --htype 2 --units 1
+Rscript loadCV_nnet_temp.R --predMethod NN --hidden 10 --tempModel 1 --htype 2 --units 1
+Rscript loadCV_nnet_temp.R --predMethod NN --hidden 20 --tempModel 1 --htype 2 --units 1
+Rscript loadCV_nnet_temp.R --predMethod NN --hidden 30 --tempModel 1 --htype 2 --units 1
+running
+

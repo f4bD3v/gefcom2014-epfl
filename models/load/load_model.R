@@ -168,7 +168,7 @@ trainLoadModelFormulaGAM <- function(feature.df, formula, train.dt, gamma) {
 
 trainLoadModelFormulaNN <- function(feature.df, formula, train.dt, hidden.units) {
   formula <- paste0("Y ~ ", formula)
-  load.model <- nnet(formula=as.formula(formula), data=feature.df, maxit=1000, decay=1e-3, size=hidden.units, linout=T)
+  load.model <- nnet(formula=as.formula(formula), data=feature.df, maxit=750, decay=1e-3, size=hidden.units, linout=T)
 #maxit=1000, decay=0.001, trace=F
   residuals <- feature.df$Y - as.vector(predict(load.model, data=feature.df)) #load.model$fitted.values
   return(list(model=load.model, residuals=residuals))
