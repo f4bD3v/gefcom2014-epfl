@@ -1,9 +1,9 @@
 ### GEFCOM PROJECT CONFIG ###
-source("/home/fbrix/gefcom2014-epfl/util/date_helpers.R")
+source("util/date_helpers.R")
 
 #** SET FIRST AND LAST DATES OF TRAINING SET **#
 first.dt <- as.POSIXct("01/01/2001 01:00", format="%m/%d/%Y %H:%M", tz="EST")
-last.dt <- as.POSIXct("11/01/2011 00:00", format="%m/%d/%Y %H:%M", tz="EST")
+last.dt <- as.POSIXct("12/01/2011 00:00", format="%m/%d/%Y %H:%M", tz="EST")
 
 #** CREATE LIST OF HOLIDAYS UP TO 2011 **#
 holidays_2005 <- c("12/26/2005", "11/24/2005", "11/11/2005", "10/10/2005", "09/05/2005", "07/04/2005", "05/30/2005", "02/21/2005", "01/17/2005", "12/31/2004")
