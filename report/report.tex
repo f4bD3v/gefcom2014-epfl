@@ -1,9 +1,12 @@
 \documentclass{article}
+
 \usepackage{amsmath, amsfonts}
 \usepackage{graphicx}
-\usepackage{subcaption}
+%\usepackage{subcaption}
 \usepackage{csvsimple}
+\usepackage{comment}
 
+\usepackage[parfill]{parskip}
 
 \begin{document}
 
@@ -11,6 +14,7 @@
 \author{Fabian}
 
 \maketitle
+
 
 \section{Introduction}
 A short introduction to the field of load forecasting and its relevance.\\
@@ -23,7 +27,7 @@ Review papers with related approaches including but not limited to those that ca
 \section{Data}
 Description of the data made available for the competition
 \subsection{Temperature Data}
-
+\begin{comment}
 \begin{table}[h!]
 \centering
 \begin{tabular}{llllll}
@@ -42,13 +46,14 @@ Year & Mean        & Median & StD         & Min   & Max   \\
 \end{tabular}
 \caption{Yearly basic statistics for average temperature over 25 weather stations in Fahrenheit}
 \end{table}
-
+\end{comment}
 The temperature data made available consists of 25 series of temperature data in Fahrenheit from 25 different weather statios dating from 01/01/2001 to 12/01/2011.\\
 %$Corr_X(m) = \frac{\mathbb{E}\[X_t-\mu_x)(X_{t+m})\]}{\var_X}$
 The Cross Correlation of the different temperature series with each other suggest that they can be explained to over 90\% by the first series. [include correlation plots]
 If we assume a temperature of 60 degrees fahrenheit, that would allow for an error of maximum 6 degrees of fahrenheit or 3 degrees celsius. As we will see later this error is negligable given the inaccuracy of the temperature prediction.
 
 \subsection{Load Data}
+\begin{comment}
 Some basic statistics computed by year.
 \begin{table}[!h]
 \centering
@@ -64,6 +69,7 @@ Year & Mean        & Median & StD         & Min  & Max   \\
 \end{tabular}
 \caption{Yearly basic statistics for Energy Load in Mega Watts}
 \end{table}
+\end{comment}
 
 \subsubsection{"Lag Analysis"}
 The effect of the lag on the Time Series Correlation Coefficient can be demonstrated using the Autocorrelation function acf() built into R stats. Here five plots showing the Autocorrelation Function for different maximum lags are displayed: 
@@ -100,14 +106,31 @@ average temperature vs. principal component
 Effect of temperature on load prediction evaluated using different methods:\\
 Mean over past years (yearly lag), LM, GAM, NN, RF vs. true temperature
 
+\subsubsection{Evaluate Results of weekly vs. monthly Temperature Prediction}
+plot MAPE \& PINBALL scores for different methods over load training + CV period in a 1x2 plot of the form:\\
+monthly scores \quad weekly scores
+
 \subsection{Load Modeling}
 
-\subsubsection{Performance of different Methods}
-GAM, NN, RF 
+\subsubsection{Evaluate the Influence of the Lag on Load Prediction}
+set the basis by plotting MAPE \& PINBALL scores by week over w1, w2, w3, w4; one curve for every month in CV\\
+do this for every method\\
+as well as a comparison of the best performing configuration of every method among each other\\
 
-\subsubsection{Model Formulas}
-Evaluating the performance of different model formulas built with the features (GAM)
+\subsubsection{Evaluate Performance for different Method Configurations}
+Use temp method that provides best score as shown in Temperature Modeling Section\par
+Different GAM formulas:\\
+plot MAPE \& PINBALL scores for all GAM formulas over CV period in a 2x2 plot of the form:\\
+monthly load with monthly temp \quad monthly load with weekly temp\\
+weekly load with monhtly temp \quad weekly load with weekly temp\par
+\vspace*{5pt}
+Different NN hidden units:\\
+plot MAPE \& PINBALL scores in 2x2 plot\par
+Different RF ntrees:\\ 
+plot MAPE \& PINBALL scores in 2x2 plot\par
 
+\subsubsection{Compare Performance of different Methods}
+choose best scoring configuration for every method and plot the results in one 2x2 plot
 
 \section{Conclusion}
 Draw conclusion based on the analysis done in the main part.
