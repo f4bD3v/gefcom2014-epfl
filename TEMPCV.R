@@ -76,7 +76,7 @@ if(!is.null(opt$predTrain)) {
 	pred.train <- opt$predTrain
 }
 PCA <- FALSE
-if(!is.null(opt$tempPCA)) {
+if(!is.null(opt$PCA)) {
 	PCA <- TRUE
 	#method <- underscoreJoin(method, "PCA")
 }
@@ -257,7 +257,7 @@ if(pred.train) {
 	pred.run.len <- load.train.month.len + test.month.len
 	train.len <- temp.train.month.len - load.train.month.len
 }
-train.stop <- subHours(addMonths(train.start), 1)
+train.stop <- subHours(addMonths(train.start, train.len), 1)
 
 #-- PRINT temp MODEL TYPE TO FILE
 method.formula <- temp.methods.formulas[[method]][[formula]]
@@ -511,12 +511,12 @@ if(pred.train) {
 
 	temp.res.h2 <- data.frame(temp.res[[2]])
 
-	attr(temp.res.h, 'horizon') <- temp.train.month.len + test.month.len 
-	attr(temp.res.h, 'train.len') <- temp.train.month.len - load.train.month.len
-	attr(temp.res.h, 'train.start') <- temp.train.start.dt
-	attr(temp.res.h, 'train.stop') <- subHours(load.train.start.dt, 1)
-	attr(temp.res.h, 'test.start') <- load.train.start.dt
-	attr(temp.res.h, 'pred_interval') <- "weekly"
+	attr(temp.res.h2, 'horizon') <- temp.train.month.len + test.month.len 
+	attr(temp.res.h2, 'train.len') <- temp.train.month.len - load.train.month.len
+	attr(temp.res.h2, 'train.start') <- temp.train.start.dt
+	attr(temp.res.h2, 'train.stop') <- subHours(load.train.start.dt, 1)
+	attr(temp.res.h2, 'test.start') <- load.train.start.dt
+	attr(temp.res.h2, 'pred_interval') <- "weekly"
 	if(method.option != "NONE") {
 		temp.res.fn <- extensionJoin(paste("predtrain", "temp-fit", date.period, method, method.option, paste0("formula", formula), "weekly", sep="_"), "rds")
 	} else {
@@ -527,10 +527,10 @@ if(pred.train) {
 	first.index <- which(temp.res.h2$HASH==hashDtYear(test.start.dt), arr.ind=TRUE)
 	temp.res.h2 <- temp.res.h2[first.index:nrow(temp.res.h2), ]
 
-	attr(temp.res.h, 'horizon') <- test.month.len 
-	attr(temp.res.h, 'train.len') <- temp.train.month.len
-	attr(temp.res.h, 'train.stop') <- temp.train.stop.dt
-	attr(temp.res.h, 'test.start') <- test.start.dt
+	attr(temp.res.h2, 'horizon') <- test.month.len 
+	attr(temp.res.h2, 'train.len') <- temp.train.month.len
+	attr(temp.res.h2, 'train.stop') <- temp.train.stop.dt
+	attr(temp.res.h2, 'test.start') <- test.start.dt
 	if(method.option != "NONE") {
 		temp.res.fn <- extensionJoin(paste("temp-fit", date.period, method, method.option, paste0("formula", formula), "weekly", sep="_"), "rds")
 	} else {

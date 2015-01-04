@@ -57,6 +57,9 @@ writeTempHeader <- function(scores.path, temp.method, temp.method.formula, inter
 
 
 writeLoadTempHeader <- function(scores.path, no.temp.formula, temp.method, temp.method.formula, pred.temp, interval) {
+    print(no.temp.formula)
+    print(temp.method)
+    print(temp.method.formula)
 	if(no.temp.formula) {
 		temp.model.str <- paste0("Temp Source ", temp.method)
 		temp.train.str <- paste0("No model training necessary")
