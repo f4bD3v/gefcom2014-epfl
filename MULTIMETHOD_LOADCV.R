@@ -140,6 +140,7 @@ leaderboard.path <- "data/load/competition-stats/leaderboard.csv"
 firstpos_benchmark.path <- "data/load/competition-stats/firstpos_benchmark.csv"
 leaderboard <- read.csv(leaderboard.path, header=TRUE, row.names=1, sep=",")
 firstpos_benchmark <- read.csv(firstpos_benchmark.path, header=TRUE, sep=",")
+colnames(firstpos_benchmark) <- c("#1", "BENCHMARK")
 #########################
 
 in.path <- "data/load/train"
@@ -665,6 +666,30 @@ for(i in 1:length(temp.method.options)) {
 				comp.board.fn <- extensionJoin(paste("comparison_board", load.method, "?", ptemp.method, curr.temp.method.option, paste0("formula", j), intervals[[p]], sep="_"), "rds")
 			}
 			saveRDS(comparison.board, file=pathJoin(load.temp.scores.path, comp.board.fn), compress=TRUE)
+			appendTableToFile(comparison.board, weekly.scores.path)
+			cat("\n", file = weekly.scores.path, append = TRUE)
+			appendTableToFile(comparison.board, monthly.scores.path)
+			cat("\n", file = monthly.scores.path, append = TRUE)
+			
+			colnames(comp) <- c("TRAIN.TMS", "TEST.TMS", "MAPE_1m", "PINBALL_1m", "POS_1m", "PINBALL_#1", "MAPE_1w", "PINBALL_1w", "MAPE_2w", "PINBALL_2w", "MAPE_3w", "PINBALL_3w", "MAPE_4w", "PINBALL_4w")
+			#comp <- data.frame(TRAIN.TMS=comp[,1], TEST.TMS=comp[,2], PINBALL_1m=as.numeric(comp[,3]), POS_1m=as.numeric(comp[,4]), PINBALL_1w=as.numeric(comp[,5]), PINBALL_2w=as.numeric(comp[,6]), PINBALL_3w=as.numeric(comp[,7]), PINBALL_4w=as.numeric(comp[,8]))
+			#comp <- data.frame(TRAIN.TMS=comp[,1], TEST.TMS=comp[,2], MAPE_1m=comp[,3], PINBALL_1m=comp[,4], POS_1m=comp[,5], PINBALL_FIRSTPOS=comp[,6], PINBALL_1w=comp[,7], PINBALL_2w=comp[,8], PINBALL_3w=comp[,9], PINBALL_4w=comp[,10])
+			#comp[,3:8] <- sapply(comp[, 3:8], as.numeric)
+
+			combined.score <- c()
+			combined.pos <- c()
+			#ul <- unname(unlist(comp))
+			#print(ul)
+			scores <- rowMeans(comp[, c("PINBALL_1w", "PINBALL_2w", "PINBALL_3w", "PINBALL_4w"), drop=FALSE], na.rm=TRUE)
+			#scores <- apply(comp[,5:8, drop=FALSE], 1, mean, na.rm=TRUE)	
+			for(h in 1:test.month.len) {
+				score <- scores[h]
+				combined.score <- c(combined.score, score)
+				combined.pos <- c(combined.pos, calcPosition(leaderboard, h, score))
+			}
+			comparison.board <- cbind(comp, PINBALL_wAVG=combined.score, POS_wAVG=combined.pos)
+			means.row <- colMeans(comparison.board[, 3:ncol(comparison.board), drop=FALSE], na.rm=TRUE)
+			print(means.row)
 			
 			### IMPORTANT: RESET DATES ###
 			temp.train.dt <- temp.train.start.dt

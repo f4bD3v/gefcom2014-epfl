@@ -93,6 +93,7 @@ leaderboard.path <- "data/load/competition-stats/leaderboard.csv"
 firstpos_benchmark.path <- "data/load/competition-stats/firstpos_benchmark.csv"
 leaderboard <- read.csv(leaderboard.path, header=TRUE, row.names=1, sep=",")
 firstpos_benchmark <- read.csv(firstpos_benchmark.path, header=TRUE, sep=",")
+colnames(firstpos_benchmark) <- c("#1", "BENCHMARK")
 #########################
 
 in.path <- "data/load/train"
@@ -130,7 +131,7 @@ temp <- cbind(temp.series, HASH=hash)
 ### DEFINE DATES & HORIZON ###
 
 #** TEST DATES **#
-test.month.len <- 13
+test.month.len <- 14
 
 test.stop.dt <- last.dt 
 test.start.dt <- subMonths(addHours(test.stop.dt, 1), test.month.len)
@@ -242,6 +243,7 @@ res <- list()
 ### CROSS VALIDATION ###
 ########################
 PINBALL <- c()
+POSITIONS <- c()
 #-------------------------------
 train.start <- temp.train.start.dt
 print(train.start)
@@ -262,7 +264,7 @@ method.formula <- temp.methods.formulas[[method]][[formula]]
 writeTempHeader(weekly.scores.path, method, method.formula, "weekly", train.start, train.stop, train.len, str.htype) 
 writeTempHeader(monthly.scores.path, method, method.formula, "monthly", train.start, train.stop, train.len, str.htype)
 
-#pred.run.len <- 2
+pred.run.len <- 2
 temp.res <- list()
 
 for(j in 1:pred.run.len) {
@@ -272,15 +274,17 @@ for(j in 1:pred.run.len) {
 		pred.horizon = 1
 		lag = var.set[2]
 
+		pred.type <- getPredictionType(htype, pred.horizon)
+
 		# features, train.start, pred.start, lag.horizon, train.len, pred.horizon, htype)
 		print(paste0("addedmonths ", addMonths(train.start, train.len)))
 		
 		train.features <- getFeatures(temp.features, train.start, lag, train.len, htype)
 		test.features <- getFeatures(temp.features, pred.start, lag, pred.horizon, htype)
 
-		train.features.fn <- paste0(paste("train-temp-features", "instance", j, pred.type, sep="_"), ".rds")
+		train.features.fn <- paste0(paste("train-temp-features", paste0("start", as.character(as.Date(train.start))), "instance", j, pred.type, sep="_"), ".rds")
 		saveRDS(train.features, file=pathJoin(features.path, train.features.fn), compress=TRUE)
-		test.features.fn <- paste0(paste("test-temp-features", "instance", j, pred.type, sep="_"), ".rds")
+		test.features.fn <- paste0(paste("test-temp-features", paste0("start", as.character(as.Date(pred.start))), "instance", j, pred.type, sep="_"), ".rds")
 		saveRDS(test.features, file=pathJoin(features.path, test.features.fn), compress=TRUE)
 
 		pred.stop <- getStopDtByHorizon(pred.start, pred.horizon, htype)
@@ -340,7 +344,7 @@ for(j in 1:pred.run.len) {
 			if (j == 1 && h==2) weekly.temp.res <- temp.res.row else weekly.temp.res <- rbind(weekly.temp.res, temp.res.row)
 			if (h==5 && restl == TRUE) weekly.temp.res <- rbind(weekly.temp.res, rest)
 		}
-		
+
 		# TO SAVE OR NOT TO SAVE HERE?
 		#attr(temp.res, 'htype') <- htypeToString(htype)
 		#attr(temp.res, 'horizon') <- pred.horizon
@@ -429,28 +433,41 @@ temp.res[[2]] <- weekly.temp.res
 
 date.period <- paste0(as.character(as.Date(test.start.dt)), "-", as.character(as.Date(test.stop.dt)))
 
+position.board <- cbind(MAPE=res[[1]]$MAPE, PINBALL=res[[1]]$PINBALL)
+print(position.board)
+dates <- res[[1]][1:(nrow(res[[1]])), c(1,2)]
+print(dates)
+position.board <- cbind(dates, position.board)
+row.names(position.board) <- c(1:pred.run.len)#, "MODEL CV MEAN")
+print(position.board)
+
 score.board <- list()
 for(h in 1:(length(loop.vars)+1)) {
 	res.last.row <- cbind(TRAIN.TMS=as.character(load.train.start.dt), TEST.TMS=as.character(last.test.dt), RMSE=mean(res[[h]]$RMSE), MAE=mean(res[[h]]$MAE), MAPE=mean(res[[h]]$MAPE), PINBALL=mean(res[[h]]$PINBALL))
 	score.board[[h]] <- rbind(res[[h]], res.last.row)
 	row.names(score.board[[h]]) <- c(c(1:pred.run.len), "MODEL CV MEAN")
 	if (h==1) {
+  		appendTableToFile(score.board[[h]], monthly.scores.path)
+  		cat("\n", file=monthly.scores.path, append = TRUE)
 		if(method.option != "NONE") {
 			scores.fn <- extensionJoin(paste("predtrain", "temp-fit-scores", "1m", date.period, method, method.option, paste0("formula", formula), "monthly", sep="_"), "rds")
 		} else {
 			scores.fn <- extensionJoin(paste("predtrain", "temp-fit-scores", "1m", date.period, method, paste0("formula", formula), "monthly", sep="_"), "rds")
 		}
-  		appendTableToFile(score.board[[h]], monthly.scores.path)
-  		cat("\n", file=monthly.scores.path, append = TRUE)
+		col <- position.board[1:pred.run.len, ]
+		comp <- col
 	} else if (h==2) {
+  		appendTableToFile(score.board[[h]], monthly.scores.path)
+  		cat("\n", file=weekly.scores.path, append = TRUE)
 		if(method.option != "NONE") {
 			scores.fn <- extensionJoin(paste("predtrain", "temp-fit-scores", "5wrest", date.period, method, method.option, paste0("formula", formula), "monthly", sep="_"), "rds")
 		} else {
 			scores.fn <- extensionJoin(paste("predtrain", "temp-fit-scores", "5wrest", date.period, method, paste0("formula", formula), "monthly", sep="_"), "rds")
 		}
-  		appendTableToFile(score.board[[h]], monthly.scores.path)
-  		cat("\n", file=weekly.scores.path, append = TRUE)
 	} else {
+  		appendTableToFile(score.board[[h]], weekly.scores.path)
+  		cat("\n", file=weekly.scores.path, append = TRUE)
+
 		var.set <- loop.vars[[h-1]]
 		htype = var.set[1]
 		test.horizon = var.set[2]
@@ -459,11 +476,59 @@ for(h in 1:(length(loop.vars)+1)) {
 		} else {
 			scores.fn <- extensionJoin(paste("predtrain", "temp-fit-scores", getPredictionType(htype, test.horizon), date.period, method, paste0("formula", formula), "weekly", sep="_"), "rds")
 		}
-  		appendTableToFile(score.board[[h]], weekly.scores.path)
-  		cat("\n", file=weekly.scores.path, append = TRUE)
+		sb <- score.board[[h]]
+		col <- sb$MAPE[1:pred.run.len]
+		col <- as.numeric(col)
+		prev.coln <- colnames(comp)
+		comp <- cbind(comp, col)
+		colnames(comp) <- c(prev.coln, c(paste0("MAPE_w", h-2)))
+		col <- sb$PINBALL[1:pred.run.len]
+		col <- as.numeric(col)
+		prev.coln <- colnames(comp)
+		comp <- cbind(comp, col)
+		colnames(comp) <- c(prev.coln, c(paste0("PINBALL_w", h-2)))
 	}
    	saveRDS(score.board[[h]], file=paste(scores.path, scores.fn, sep="/"), compress=TRUE)
 }
+
+colnames(comp) <- c("TRAIN.TMS", "TEST.TMS", "MAPE_1m", "PINBALL_1m", "MAPE_1w", "PINBALL_1w", "MAPE_2w", "PINBALL_2w", "MAPE_3w", "PINBALL_3w", "MAPE_4w", "PINBALL_4w")
+combined.score <- c()
+combined.pos <- c()
+
+scores <- rowMeans(comp[, c("PINBALL_1w", "PINBALL_2w", "PINBALL_3w", "PINBALL_4w"), drop=FALSE], na.rm=TRUE)
+print(scores)
+#scores <- apply(comp[,5:8, drop=FALSE], 1, mean, na.rm=TRUE)	
+for(h in 1:pred.run.len) {
+	score <- scores[h]
+	combined.score <- c(combined.score, score)
+}
+comparison.board <- cbind(comp, PINBALL_wAVG=combined.score)
+means.row <- colMeans(comparison.board[, 3:ncol(comparison.board), drop=FALSE], na.rm=TRUE)
+print(means.row)
+comparison.means.row <- cbind(TRAIN.TMS=as.character(load.train.start.dt), TEST.TMS=as.character(last.test.dt), t(data.frame(means.row)))
+print(comparison.means.row)
+colnames(comparison.means.row) <- c("TRAIN.TMS", "TEST.TMS", "MAPE_1m", "PINBALL_1m", "MAPE_1w", "PINBALL_1w", "MAPE_2w", "PINBALL_2w", "MAPE_3w", "PINBALL_3w", "MAPE_4w", "PINBALL_4w", "PINBALL_wAVG")
+print(comparison.means.row)
+comparison.board <- rbind(comparison.board, comparison.means.row)
+print(comparison.board)
+row.names(comparison.board) <- c(c(1:pred.run.len), "CV MEAN")
+print(comparison.board)
+
+if(method.option != "NONE") {
+	board.fn <- extensionJoin(paste("comparison_board", getPredictionType(htype, test.horizon), date.period, method, method.option, paste0("formula", formula), "weekly", sep="_"), "rds")
+} else {
+	board.fn <- extensionJoin(paste("comparison_board", getPredictionType(htype, test.horizon), date.period, method, paste0("formula", formula), "weekly", sep="_"), "rds")
+}
+
+saveRDS(comparison.board, file=pathJoin(scores.path, board.fn), compress=TRUE)
+cat("\n", file = weekly.scores.path, append = TRUE)
+cat("\n", file = monthly.scores.path, append = TRUE)
+
+appendTableToFile(comparison.board, weekly.scores.path)
+cat("\n", file = weekly.scores.path, append = TRUE)
+appendTableToFile(comparison.board, monthly.scores.path)
+cat("\n", file = monthly.scores.path, append = TRUE)
+
 
 if(pred.train) {
 	htype <- 2
@@ -471,6 +536,7 @@ if(pred.train) {
 	pred.type <- getPredictionType(htype, pred.horizon)
 
 	temp.res.h <- data.frame(temp.res[[1]])
+	print(temp.res.h)
 
 	attr(temp.res.h, 'htype') <- htypeToString(htype)
 	attr(temp.res.h, 'horizon') <- temp.train.month.len + test.month.len 
