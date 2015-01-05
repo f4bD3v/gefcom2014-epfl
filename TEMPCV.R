@@ -465,7 +465,6 @@ for(h in 1:(length(loop.vars)+1)) {
    	saveRDS(score.board[[h]], file=paste(scores.path, scores.fn, sep="/"), compress=TRUE)
 }
 
-
 if(pred.train) {
 	htype <- 2
 	pred.horizon = 1
@@ -507,7 +506,7 @@ if(pred.train) {
 	saveRDS(temp.res.h, file=paste(method.path, temp.res.fn, sep="/"), compress=TRUE)
 
 
-	temp.res.h <- data.frame(temp.res[[2]])
+	temp.res.h2 <- data.frame(temp.res[[2]])
 
 	attr(temp.res.h2, 'horizon') <- temp.train.month.len + test.month.len 
 	attr(temp.res.h2, 'train.len') <- temp.train.month.len - load.train.month.len
@@ -520,10 +519,10 @@ if(pred.train) {
 	} else {
 		temp.res.fn <- extensionJoin(paste("predtrain", "temp-fit", date.period, method, paste0("formula", formula), "weekly", sep="_"), "rds")
 	}
-	saveRDS(temp.res.h, file=paste(method.path, temp.res.fn, sep="/"), compress=TRUE)
+	saveRDS(temp.res.h2, file=paste(method.path, temp.res.fn, sep="/"), compress=TRUE)
 
-	first.index <- which(temp.res.h$HASH==hashDtYear(test.start.dt), arr.ind=TRUE)
-	temp.res.h <- temp.res.h[first.index:nrow(temp.res.h), ]
+	first.index <- which(temp.res.h2$HASH==hashDtYear(test.start.dt), arr.ind=TRUE)
+	temp.res.h2 <- temp.res.h2[first.index:nrow(temp.res.h2), ]
 
 	attr(temp.res.h2, 'horizon') <- test.month.len 
 	attr(temp.res.h2, 'train.len') <- temp.train.month.len
@@ -534,7 +533,7 @@ if(pred.train) {
 	} else {
 		temp.res.fn <- extensionJoin(paste("temp-fit", date.period, method, paste0("formula", formula), "weekly", sep="_"), "rds")
 	}
-	saveRDS(temp.res.h, file=paste(method.path, temp.res.fn, sep="/"), compress=TRUE)
+	saveRDS(temp.res.h2, file=paste(method.path, temp.res.fn, sep="/"), compress=TRUE)
 } else {
 	htype <- 2
 	pred.horizon = 1
@@ -549,7 +548,7 @@ if(pred.train) {
 	} else {
 		temp.res.fn <- extensionJoin(paste("predtrain", "temp-fit", date.period, method, paste0("formula", formula), "weekly", sep="_"), "rds")
 	}
-	saveRDS(temp.res.h2, file=paste(method.path, temp.res.fn, sep="/"), compress=TRUE)
+	saveRDS(temp.res.h, file=paste(method.path, temp.res.fn, sep="/"), compress=TRUE)
 
 	temp.res.h2 <- data.frame(temp.res[[2]])
 

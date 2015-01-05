@@ -1,5 +1,5 @@
-source("/home/fbrix/gefcom2014-epfl/util/plot_helpers.R")
-source("/home/fbrix/gefcom2014-epfl/config.R")
+source("~/gefcom2014-epfl/util/plot_helpers.R")
+source("~/gefcom2014-epfl/config.R")
 require("lubridate")
 require("MASS")
 # load all .rds files in directory
