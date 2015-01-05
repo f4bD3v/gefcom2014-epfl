@@ -1,8 +1,8 @@
 source("/home/fbrix/gefcom2014-epfl/util/plot_helpers.R")
 source("/home/fbrix/gefcom2014-epfl/config.R")
 require("lubridate")
+require("MASS")
 # load all .rds files in directory
-
 dir.exists <- function(path) FALSE
 
 plotRDS <- function(df, htype, horizon) {
@@ -13,7 +13,7 @@ plotRDS <- function(df, htype, horizon) {
 	chunks <- 4*horizon
 
 	start.date <- tms[1]
-	end.date <- tms[nrow(res.df)]
+	end.date <- tms[nrow(df)]
 
 	#** plotPredictionResiduals
 	# - tms, fit, target, residuals,
@@ -24,10 +24,20 @@ plotRDS <- function(df, htype, horizon) {
 }
 
 plotProcessing <- function(dir.path, files) {
-	rds.file <- substring(rds.file, 3, nchar(rds.file))
+	print(dir.path)
+	setwd(dir.path)
+	#print(getwd())
 	for(rds.file in files) {
-		path <- paste(dir.path, rds.file, sep="/")
-		res.df <-readRDS(rds.file)
+		#rds.file <- substring(rds.file, 3, nchar(rds.file))
+		#rds.file <- gsub('?', '\?', rds.file)
+		#rds.file <- paste0("./", rds.file)
+		print(rds.file)
+		path <- paste(getwd(), rds.file, sep="/")
+		print(path)
+
+		#res.df <-readRDS(system.file("help", rds.file, package="MASS"))
+		res.df <- readRDS(path)
+		#print(res.df)
 		htype <- attr(res.df, 'htype')
 		horizon <-attr(res.df, 'horizon')
 		print(horizon)
@@ -36,14 +46,25 @@ plotProcessing <- function(dir.path, files) {
 		start.date <- as.Date(tms[1])
 		end.date <- as.Date(tms[nrow(res.df)])
 
-		res.df <- data.frame(TMS=tms, FIT=res.df[,2], TARGET=res.df[,3])
+		res.df <- data.frame(TMS=tms, FIT=as.numeric(res.df[,2]), TARGET=as.numeric(res.df[,3]))
+		#res.df <- data.matrix(res.df, rownames.force=NA)
+		#prefix <- substring(rds.file, 3, nchar(rds.file))
+		#parts <- strsplit(path, "\\?")[[1]]
+		#part1 <- parts[1]
+		#prefix <- parts[1]
+		#parts <- strsplit(part1, "/")[[1]]
+		#part1 <- parts[1]
+		#part2 <- parts[2]
+		#part3 <- parts[3]
 
-		prefix <- substring(rds.file, 3, nchar(rds.file))
-		parts <- strsplit(prefix, "\\?")[[1]]
-		prefix <- parts[1]
+		#prefix <- substring(rds.file, 3, nchar(rds.file))
+		parts <- strsplit(rds.file, "\\.")[[1]]
+		filename <- parts[1]
 
 		if(grepl('all', rds.file)) {
-			fn.pdf <- paste0(paste("all-plots", prefix, start.date, end.date, sep="_"), ".pdf")
+			#fn.pdf <- paste0(paste(part1, part2, paste("all-plots", part3, start.date, end.date, sep="_"), sep="/"), ".pdf")
+			fn.pdf <- paste0(paste("all-plots", filename, sep="_"), ".pdf")
+			print(fn.pdf)
 			pdf(file=fn.pdf, width=8, height=11)
 			par(mfrow=c(3,4))
 
@@ -54,7 +75,8 @@ plotProcessing <- function(dir.path, files) {
 			dev.off()
 
 		} else {
-			fn.pdf <- paste0(paste("plot", prefix, start.date, end.date, sep="_"), ".pdf")
+			#fn.pdf <- paste0(paste(part1, part2, paste("plot", part3, start.date, end.date, sep="_"), sep="/"), ".pdf")
+			fn.pdf <- paste0(paste("plot", filename, sep="_"), ".pdf")
 			pdf(file=fn.pdf, width=8, height=11)
 			par(mfrow=c(2,2))
 
@@ -66,31 +88,44 @@ plotProcessing <- function(dir.path, files) {
 	}
 }
 
+plotFromFormulaPath <- function(form.dir, method, option="NONE") {
+	parts <- strsplit(form.dir, "/")[[1]]
+	formula <- parts[[length(parts)]]
+	fits.path <- paste(form.dir, "fits", sep="/")
+	temp.dirs <- list.dirs(fits.path, full.names = TRUE, recursive=FALSE)
+	for(temp.dir in temp.dirs) {
+		files <- dir(temp.dir, pattern = '\\.rds', full.names = FALSE)
+		files <- files[order(nchar(files), files)]
+		print(files)
+		plotProcessing(temp.dir, files)
+		if(option == "NONE") {
+			setwd("../../../..")
+		} else {
+			setwd("../../../../..")
+		}
+	}
+}
+
 path <- '.'
 dirs <- list.dirs(path, full.names = TRUE, recursive=FALSE)
-
-for(dir in dirs) {
-	#dir <- substring(dir, 3, nchar(dir))
-	# gam - gamma later
-	if(grepl('gam', dir) || grepl('lm', dir)) {
-		# add an extra layer for the model folders
-		sub.dirs <- list.dirs(dir, full.names = TRUE, recursive=FALSE)
-		for(sub.dir in sub.dirs) {
-			sub.dir <- substring(sub.dir, 3, nchar(sub.dir)
-			path <- paste(dir, sub.dir, sep="/")
-			files <- dir(path, pattern = '\\.rds', full.names = TRUE)
-			files <- files[order(nchar(files), files)]
-			plotProcessing(path, files)
-			#call plot processing
-		}
-	} else if(grepl('nnet', dir) || grepl('randomforest', dir)) {
-		sub.dirs <- list.dirs(dir, full.names = TRUE, recursive=FALSE)
-		for(sub.dir in sub.dirs) {
-			sub.dir <- substring(sub.dir, 3, nchar(sub.dir)
-			path <- paste(dir, sub.dir, sep="/")
-			files <- dir(path, pattern = '\\.rds', full.names = TRUE)
-			files <- files[order(nchar(files), files)]
-			plotProcessing(path, files)
+for(meth.dir in dirs) {
+	print(meth.dir)
+	parts <- strsplit(meth.dir, "/")[[1]]
+	method <- parts[[length(parts)]]
+	opt.dirs <- list.dirs(meth.dir, full.names = TRUE, recursive=FALSE)
+	for(opt.dir in opt.dirs) {
+		if(grepl('formula', opt.dir)) {
+			print(opt.dir)
+			plotFromFormulaPath(opt.dir, method)
+		} else {
+		#option
+			parts <- strsplit(opt.dir, "/")[[1]]
+			option <- parts[[length(parts)]]
+			form.dir <- list.dirs(opt.dir, full.names = TRUE, recursive=FALSE)
+			if(grepl('formula', form.dir)) {
+				print(form.dir)
+				plotFromFormulaPath(form.dir, method, option)
+			}
 		}
 	}
 }

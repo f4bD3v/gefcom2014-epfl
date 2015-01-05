@@ -143,6 +143,7 @@ getTempMethodPaths <- function(temp.method.path, temp.method, temp.method.option
 	temp.method.options.paths <- list()
 	temp.method.formulas <- list()
 	temp.method.formulas.paths <- list()
+	print(temp.method.option)
 	if(temp.method.option == "NONE") {
 		temp.method.options.paths <- list(pathJoin(temp.method.path, temp.method))
 		temp.method.options <- list(temp.method)
@@ -158,7 +159,6 @@ getTempMethodPaths <- function(temp.method.path, temp.method, temp.method.option
 		formula.count <- 1
 		for(dir in dirs) {
 			if(grepl('formula', dir)) {
-				print(dir)
 				temp.method.formulas.paths[[temp.method]][[formula.count]] <- dir
 				temp.method.formulas[[temp.method]][[formula.count]] <- temp.methods.formulas[[temp.method]][[formula.count]]
 				formula.count <- formula.count + 1
@@ -168,24 +168,28 @@ getTempMethodPaths <- function(temp.method.path, temp.method, temp.method.option
 		dirs <- list.dirs(temp.method.path, full.names = TRUE, recursive=FALSE)
   		dirs <- dirs[order(nchar(dirs), dirs)]
 		option.count <- 1
+
 		for(dir in dirs) {
-			if(grepl('(hidden-units|ntrees)')) {
+			if(grepl('(hidden-units|ntrees)', dir)) {
+				print(dir)
 				temp.method.options.paths[[option.count]] <- dir
-				option.count <- option.count + 1
 				dir.parts <- strsplit(dir, "/")[[1]]
 				option.name <- dir.parts[length(dir.parts)]
+				print(option.name)
 				temp.method.options[[option.count]] <- option.name
+				temp.method.options.paths[[option.count]] <- list()
 				sub.dirs <- list.dirs(dir, full.names = TRUE, recursive=FALSE)
 				temp.method.formulas.paths[[option.name]] <- list()
 				temp.method.formulas[[option.name]] <- list()
 				formula.count <- 1
 				for(sub.dir in sub.dirs) {
-					if(grepl('formula')) {
+					if(grepl('formula', sub.dir)) {
 						temp.method.formulas.paths[[option.name]][[formula.count]] <- sub.dir
 						temp.method.formulas[[option.name]][[formula.count]] <- temp.methods.formulas[[temp.method]][[formula.count]]
 						formula.count <- formula.count + 1
 					}
 				}
+				option.count <- option.count + 1
 			}
 		}
 	}
