@@ -68,6 +68,7 @@ writeLoadTempHeader <- function(scores.path, no.temp.formula, temp.method, temp.
 		temp.model.str <- paste0("Temp Method ", temp.method, "; ", interval, " prediction intervals; using formula: ", temp.method.formula)
 		### TODO: GET temp.train.month.len from .rds attribute, as well as first date and last date
 		temp.start.dt <- attr(pred.temp, "train.start")
+        print(temp.start.dt)
 		temp.stop.dt <- attr(pred.temp, "train.stop")
 		temp.len <- attr(pred.temp, "train.len")
 		temp.str.htype <- attr(pred.temp, "str.htype")
