@@ -1,0 +1,2 @@
+load("/Users/fab/github_repos/gefcom2014-epfl/data/analysis/temp-df.rds")
+ls

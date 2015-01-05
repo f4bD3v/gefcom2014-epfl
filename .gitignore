@@ -3,6 +3,8 @@
 .RData
 .rds
 .swp
+.Rapp
+.Rapp.history
 
 data/load/test
 

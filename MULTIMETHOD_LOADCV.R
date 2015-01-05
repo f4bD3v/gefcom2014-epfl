@@ -195,7 +195,6 @@ if(file.exists(curr.features.path)) {
 	saveRDS(load.features, file=curr.features.path, compress=TRUE)
 }
 
-
 ## FETCH TEMP PATHS ##
 temp.path <- pathJoin(base.path, "temp")
 temp.method.path <- pathJoin(temp.path, temp.method)
@@ -290,7 +289,8 @@ for(i in 1:length(temp.method.options)) {
 				temp <- rbind(cut.temp, pred.temp)
 			}
 			rownames(temp) <- NULL
-			
+			temp.train.len <- attr(pred.temp, "train.len")
+            print(attributes(pred.temp))
 
 			date.period <- paste0(as.character(as.Date(test.start.dt)), "-", as.character(as.Date(test.stop.dt)))
 			print(date.period)
@@ -540,11 +540,9 @@ for(i in 1:length(temp.method.options)) {
 
 			### LATER: DO STATS AND RECOMPUTE 
 			for(h in 1:(length(loop.vars)+1)) {
-				appendTableToFile(score.board[[h]], weekly.scores.path)
-				appendTableToFile(score.board[[h]], monthly.scores.path)
-				cat("\n", file = weekly.scores.path, append = TRUE)
-				cat("\n", file = monthly.scores.path, append = TRUE)
 				if (h==1) {
+				    appendTableToFile(score.board[[h]], monthly.scores.path)
+				    cat("\n", file = monthly.scores.path, append = TRUE)
 					if(grepl("(GAM|LM)", curr.temp.method.option)) {
 						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", "1m", load.method, date.period, "all", "?", "temp-model", temp.method, paste0("formula", j), intervals[[p]], sep="_"), "rds")
 					} else if(no.temp.formula) {
@@ -555,6 +553,8 @@ for(i in 1:length(temp.method.options)) {
 					col <- position.board[1:test.month.len, 1:6]
 					comp <- col
 				} else if (h==2) {
+				    appendTableToFile(score.board[[h]], weekly.scores.path)
+				    cat("\n", file = weekly.scores.path, append = TRUE)
 					if(grepl("(GAM|LM)", curr.temp.method.option)) {
 						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", "5wrest", load.method, date.period, "all", "?", "temp-model", temp.method, paste0("formula", j), intervals[[p]], sep="_"), "rds")
 					} else if(no.temp.formula) {
@@ -563,6 +563,8 @@ for(i in 1:length(temp.method.options)) {
 						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", "5wrest", load.method, date.period, "all", "?", "temp-model", temp.method, curr.temp.method.option, paste0("formula", j), intervals[[p]], sep="_"), "rds")
 					}	
 				} else {
+				    appendTableToFile(score.board[[h]], weekly.scores.path)
+				    cat("\n", file = weekly.scores.path, append = TRUE)
 					var.set <- loop.vars[[h-1]]
 					htype = var.set[1]
 					test.horizon = var.set[2]
