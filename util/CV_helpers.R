@@ -37,19 +37,14 @@ aschr <- function(date) {
 writeLoadHeader <- function(scores.path, load.method, load.method.formula, interval, load.train.month.len, str.htype, load.train.start.dt) {
 	load.method.str <- paste0("Load Method ", load.method.names[[load.method]], "; ", interval, " prediction intervals; using formula: ", load.method.formula) 
 	load.train.str <- paste0("Load Model Training Length: ", load.train.month.len, " ", str.htype, " starting ", load.train.start.dt)
-	print(scores.path)
 	writeToFile(load.method.str, scores.path)
 	appendToFile(load.train.str, scores.path)
 	cat("\n", file=scores.path, append = TRUE)
 }
 
 writeTempHeader <- function(scores.path, temp.method, temp.method.formula, interval, train.start.dt, train.stop.dt, temp.train.len, str.htype) { 
-	print(scores.path)
-	print(interval)
-	print(temp.method.formula)
 	temp.model.str <- paste0("Temp Method ", temp.method, "; ", interval, " prediction intervals; using formula: ", temp.method.formula)
 	temp.train.str <- paste0("Temp Training Period: ", as.character(as.Date(train.start.dt)), "-", as.character(as.Date(train.stop.dt)), "; Length: ", temp.train.len, " ", str.htype)
-	print(scores.path)
 	writeToFile(temp.model.str, scores.path)
 	appendToFile(temp.train.str, scores.path)
 	cat("\n", file=scores.path, append = TRUE)
@@ -57,9 +52,6 @@ writeTempHeader <- function(scores.path, temp.method, temp.method.formula, inter
 
 
 writeLoadTempHeader <- function(scores.path, no.temp.formula, temp.method, temp.method.formula, pred.temp, interval) {
-    print(no.temp.formula)
-    print(temp.method)
-    print(temp.method.formula)
 	if(no.temp.formula) {
 		temp.model.str <- paste0("Temp Source ", temp.method)
 		temp.train.str <- paste0("No model training necessary")
@@ -68,13 +60,11 @@ writeLoadTempHeader <- function(scores.path, no.temp.formula, temp.method, temp.
 		temp.model.str <- paste0("Temp Method ", temp.method, "; ", interval, " prediction intervals; using formula: ", temp.method.formula)
 		### TODO: GET temp.train.month.len from .rds attribute, as well as first date and last date
 		temp.start.dt <- attr(pred.temp, "train.start")
-        print(temp.start.dt)
 		temp.stop.dt <- attr(pred.temp, "train.stop")
 		temp.len <- attr(pred.temp, "train.len")
 		temp.str.htype <- attr(pred.temp, "str.htype")
 		temp.train.str <- paste0("Temp Training Period: ", as.character(as.Date(temp.start.dt)), "-", as.character(as.Date(temp.stop.dt)), "; Length: ", temp.len, " ", str.htype)
 	}
-	print(scores.path)
 	appendToFile(temp.model.str, scores.path)
 	appendToFile(temp.train.str, scores.path)
 	cat("\n", file=scores.path, append = TRUE)
@@ -113,13 +103,11 @@ createMethodFolder <- function(base.path, type, pred.method, method.option, form
 	path <- pathJoin(base.path, type)
 	createDir(path)
 	folder <- pred.method
-	print(pred.method)
 	if(PCA) {
 		folder <- underscoreJoin(pred.method, "PCA")
 	} else if(station) {
 		folder <- underscoreJoin(pred.method, paste0("Station", station))
 	}
-	print(folder)
 	method.path <- pathJoin(path, folder)
 	createDir(method.path)
 	if(method.option != "NONE") {
@@ -162,7 +150,6 @@ getTempMethodPaths <- function(temp.method.path, temp.method, temp.method.option
 		formula.count <- 1
 		for(dir in dirs) {
 			if(grepl('formula', dir)) {
-				print(dir)
 				temp.method.formulas.paths[[temp.method]][[formula.count]] <- dir
 				temp.method.formulas[[temp.method]][[formula.count]] <- temp.methods.formulas[[temp.method]][[formula.count]]
 				formula.count <- formula.count + 1
@@ -172,24 +159,28 @@ getTempMethodPaths <- function(temp.method.path, temp.method, temp.method.option
 		dirs <- list.dirs(temp.method.path, full.names = TRUE, recursive=FALSE)
   		dirs <- dirs[order(nchar(dirs), dirs)]
 		option.count <- 1
+
 		for(dir in dirs) {
-			if(grepl('(hidden-units|ntrees)')) {
+			if(grepl('(hidden-units|ntrees)', dir)) {
+				print(dir)
 				temp.method.options.paths[[option.count]] <- dir
-				option.count <- option.count + 1
 				dir.parts <- strsplit(dir, "/")[[1]]
 				option.name <- dir.parts[length(dir.parts)]
+				print(option.name)
 				temp.method.options[[option.count]] <- option.name
+				temp.method.options.paths[[option.count]] <- list()
 				sub.dirs <- list.dirs(dir, full.names = TRUE, recursive=FALSE)
 				temp.method.formulas.paths[[option.name]] <- list()
 				temp.method.formulas[[option.name]] <- list()
 				formula.count <- 1
 				for(sub.dir in sub.dirs) {
-					if(grepl('formula')) {
+					if(grepl('formula', sub.dir)) {
 						temp.method.formulas.paths[[option.name]][[formula.count]] <- sub.dir
 						temp.method.formulas[[option.name]][[formula.count]] <- temp.methods.formulas[[temp.method]][[formula.count]]
 						formula.count <- formula.count + 1
 					}
 				}
+				option.count <- option.count + 1
 			}
 		}
 	}

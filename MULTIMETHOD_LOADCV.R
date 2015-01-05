@@ -101,7 +101,11 @@ if(!is.null(opt$tempPCA)) {
 temp.station <- FALSE
 if(!is.null(opt$tempStation)) {
 	temp.station <- opt$tempStation
-	temp.method <- underscoreJoin(temp.method, temp.station)
+	temp.method <- underscoreJoin(temp.method, paste0("Station", temp.station))
+}
+
+if(grepl('(RF|NN)', temp.method)) {
+	temp.method.option <- "TRUE"
 }
 
 pred.train <- TRUE
@@ -226,20 +230,24 @@ temp.method.options <- list.of.lists[[2]]
 # hash table for formulas would be most convenient solution
 temp.method.formulas.paths <- list.of.lists[[3]] 
 temp.method.formulas <- list.of.lists[[4]] 
-if(temp.method.option != "NONE") {
-	temp.method.options <- list(temp.method.option)
-}
+#if(temp.method.option != "NONE") {
+#	temp.method.options <- list(temp.method.option)
+#}
 
 load.method.formula <- load.methods.formulas[[load.method]][[load.formula]]
+print(temp.method.options)
 
 for(i in 1:length(temp.method.options)) {
 	curr.temp.method.option <- temp.method.options[[i]]
+	print(curr.temp.method.option)
 	temp.formulas <- temp.method.formulas[[curr.temp.method.option]]
 	temp.formula.paths <- temp.method.formulas.paths[[curr.temp.method.option]]
 	for(j in 1:length(temp.formulas)) {
 		temp.formula <- temp.formulas[[j]]
 		temp.formula.path <- temp.formula.paths[[j]]
 		for(p in 1:length(intervals)) {
+			print(curr.temp.method.option)
+			print(temp.formula.path)
 			load.temp.scores.path <- pathJoin(load.scores.path, temp.method)
 			load.temp.fits.path <- pathJoin(load.fits.path, temp.method)
 			createDir(load.temp.scores.path)
@@ -268,6 +276,7 @@ for(i in 1:length(temp.method.options)) {
 			writeLoadHeader(weekly.scores.path, load.method, load.method.formula, "weekly", load.train.month.len, str.htype, load.train.start.dt)
 			writeLoadHeader(monthly.scores.path, load.method, load.method.formula, "monthly", load.train.month.len, str.htype, load.train.start.dt)
 
+			print(temp.formula.path)
 			if(no.temp.formula) {
 				pattern <- temp.method
 				temp.method.file <- dir(temp.method.path, pattern='\\.rds', full.names = TRUE)
@@ -276,8 +285,18 @@ for(i in 1:length(temp.method.options)) {
 				pattern <- paste0("formula", j, "_", intervals[[p]])
 				temp.method.file <- temp.files[grepl(pattern, temp.files)]
 			}
-            print(temp.method.file)
+
+            #print(temp.method.file)
+			#pred.temp <- readRDS(temp.method.file)
+
+			print(temp.method.file)
 			pred.temp <- readRDS(temp.method.file)
+			temp.train.len <- attr(pred.temp, "train.len")
+			print(temp.train.len)
+			
+			writeLoadTempHeader(weekly.scores.path, no.temp.formula, temp.method, temp.formula, pred.temp, intervals[[p]])
+			writeLoadTempHeader(monthly.scores.path, no.temp.formula, temp.method, temp.formula, pred.temp, intervals[[p]])
+
 			if(grepl("(MEAN|TRUE)", temp.method)) {
 				temp <- pred.temp
 			} else {
@@ -291,8 +310,9 @@ for(i in 1:length(temp.method.options)) {
 			}
 			rownames(temp) <- NULL
 			temp.train.len <- attr(pred.temp, "train.len")
-			writeLoadTempHeader(weekly.scores.path, no.temp.formula, temp.method, temp.formula, pred.temp, intervals[[p]])
-			writeLoadTempHeader(monthly.scores.path, no.temp.formula, temp.method, temp.formula, pred.temp, intervals[[p]])
+
+			#writeLoadTempHeader(weekly.scores.path, no.temp.formula, temp.method, temp.formula, pred.temp, intervals[[p]])
+			#writeLoadTempHeader(monthly.scores.path, no.temp.formula, temp.method, temp.formula, pred.temp, intervals[[p]])
 
 			date.period <- paste0(as.character(as.Date(test.start.dt)), "-", as.character(as.Date(test.stop.dt)))
 			print(date.period)
@@ -358,7 +378,11 @@ for(i in 1:length(temp.method.options)) {
 						} else if(no.temp.formula) {
 							load.model.fn <- extensionJoin(paste("monthly", "model", load.method, "?", ptemp.method, intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
 						} else {
+<<<<<<< HEAD
 							load.model.fn <- extensionJoin(paste("monthly", "model", load.method, "?", ptemp.method, curr.method.option, paste0("formula", j), intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
+=======
+							load.model.fn <- extensionJoin(paste("monthly", "model", load.method, "?", temp.method, curr.temp.method.option, paste0("formula", j), intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
+>>>>>>> 468c23dfe088a4820de7838c351b9c9a4de383da
 						}
 					} else {
 						if(grepl("(GAM|LM)", curr.temp.method.option)) {
@@ -366,7 +390,11 @@ for(i in 1:length(temp.method.options)) {
 						} else if(no.temp.formula) {
 							load.model.fn <- extensionJoin(paste("weekly", "model", load.method, "?", ptemp.method, intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
 						} else {
+<<<<<<< HEAD
 							load.model.fn <- extensionJoin(paste("weekly", "model", load.method, "?", ptemp.method, curr.method.option, paste0("formula", j), intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
+=======
+							load.model.fn <- extensionJoin(paste("weekly", "model", load.method, "?", temp.method, curr.temp.method.option, paste0("formula", j), intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
+>>>>>>> 468c23dfe088a4820de7838c351b9c9a4de383da
 						}
 					}
 					capture.output(summary(load.model), file=pathJoin(load.model.instances.path,load.model.fn))
