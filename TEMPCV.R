@@ -179,13 +179,11 @@ print(paste0("method.path", method.path))
 
 if(!grepl("(MEAN|TRUE)", method)) {
 	model.instances.path <- createFolder(method.path, "temp-model-instances")
-	plot.path <- createFolder(method.path, "plots")
+	plot.path <- pathJoin(base.path, "temp")
 	scores.path <- createFolder(method.path, "scores")
 
 	#** COPY PLOT SCRIPTS **#
-	file.copy(from='plotTempResults.R', to=plot.path)
-	file.copy(from='util/plot_helpers.R', to=plot.path)
-	file.copy(from='config.R', to=plot.path)
+	file.copy(from='plotAllTempResults.R', to=plot.path)
 }
 features.path <- createFolder(method.path, "features")
 

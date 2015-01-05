@@ -179,17 +179,14 @@ base.path <- createBaseFolder(out.path, test.start.dt, test.stop.dt)
 # Deals with options etc.
 load.method.path <- createMethodFolder(base.path, "load", load.method, load.method.option, load.formula, temp.PCA, temp.station)
 load.model.instances.path <- createFolder(load.method.path, "load-model-instances")
-load.plot.path <- createFolder(load.method.path, "plots")
+load.plot.path <- pathJoin(base.path, "load")
 load.scores.path <- createFolder(load.method.path, "scores")
 load.fits.path <- createFolder(load.method.path, "fits")
 
 load.features.path <- createFolder(load.method.path, "load-features")
 
 #** COPY PLOT SCRIPTS **#
-file.copy(from='plotLoadResults.R', to=load.plot.path)
-file.copy(from='util/plot_helpers.R', to=load.plot.path)
-file.copy(from='config.R', to=load.plot.path)
-
+file.copy(from='plotAllLoadResults.R', to=load.plot.path)
 
 ### SAVE FULL LOAD FEATURES FOR VERIFICATION ###
 features.fn <- extensionJoin("full-load-features", "rds")
