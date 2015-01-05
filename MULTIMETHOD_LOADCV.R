@@ -375,11 +375,7 @@ for(i in 1:length(temp.method.options)) {
 						} else if(no.temp.formula) {
 							load.model.fn <- extensionJoin(paste("monthly", "model", load.method, "?", ptemp.method, intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
 						} else {
-<<<<<<< HEAD
-							load.model.fn <- extensionJoin(paste("monthly", "model", load.method, "?", ptemp.method, curr.method.option, paste0("formula", j), intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
-=======
-							load.model.fn <- extensionJoin(paste("monthly", "model", load.method, "?", temp.method, curr.temp.method.option, paste0("formula", j), intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
->>>>>>> 468c23dfe088a4820de7838c351b9c9a4de383da
+							load.model.fn <- extensionJoin(paste("monthly", "model", load.method, "?", ptemp.method, curr.temp.method.option, paste0("formula", j), intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
 						}
 					} else {
 						if(grepl("(GAM|LM)", curr.temp.method.option)) {
@@ -387,11 +383,7 @@ for(i in 1:length(temp.method.options)) {
 						} else if(no.temp.formula) {
 							load.model.fn <- extensionJoin(paste("weekly", "model", load.method, "?", ptemp.method, intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
 						} else {
-<<<<<<< HEAD
-							load.model.fn <- extensionJoin(paste("weekly", "model", load.method, "?", ptemp.method, curr.method.option, paste0("formula", j), intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
-=======
-							load.model.fn <- extensionJoin(paste("weekly", "model", load.method, "?", temp.method, curr.temp.method.option, paste0("formula", j), intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
->>>>>>> 468c23dfe088a4820de7838c351b9c9a4de383da
+							load.model.fn <- extensionJoin(paste("weekly", "model", load.method, "?", ptemp.method, curr.temp.method.option, paste0("formula", j), intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
 						}
 					}
 					capture.output(summary(load.model), file=pathJoin(load.model.instances.path,load.model.fn))
@@ -474,7 +466,7 @@ for(i in 1:length(temp.method.options)) {
 
 					#** CALC LEADERBOARD POSITION FOR GIVEN MONTH **#
 					if(h==1) {
-						position <- calcPosition(leaderboard, j, err.pinball)
+						position <- calcPosition(leaderboard, ml, err.pinball)
 						POSITIONS <- c(POSITIONS, position)
 					}
 
@@ -632,7 +624,7 @@ for(i in 1:length(temp.method.options)) {
 			combined.pos <- c()
 			#ul <- unname(unlist(comp))
 			#print(ul)
-			scores <- rowMeans(comp[, 5:8, drop=FALSE], na.rm=TRUE)
+			scores <- rowMeans(comp[, c("PINBALL_1w", "PINBALL_2w", "PINBALL_3w", "PINBALL_4w"), drop=FALSE], na.rm=TRUE)
 			#scores <- apply(comp[,5:8, drop=FALSE], 1, mean, na.rm=TRUE)	
 			for(h in 1:test.month.len) {
 				score <- scores[h]
