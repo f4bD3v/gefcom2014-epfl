@@ -63,7 +63,6 @@ if(!is.null(opt$loadFormula)) {
 	load.formula <- opt$loadFormula
 }
 
-
 #** TEMP **#
 temp.method <- opt$tempPredMethod
 temp.method.option <- "NONE"
@@ -226,8 +225,25 @@ list.of.lists <- getTempMethodPaths(temp.method.path, temp.method, temp.method.o
 temp.method.options.paths <- list.of.lists[[1]] 
 temp.method.options <- list.of.lists[[2]] 
 # hash table for formulas would be most convenient solution
+
+### SHORTEN EXECUTION TIME
+if(temp.ntrees != -1 || temp.hidden.units != -1) {
+    temp.method.options <- list(temp.method.option)
+    print(temp.method.options)
+    # only keep path of temp.method.option
+    temp.method.options.paths <- temp.method.options.paths[[grepl(temp.method.option, temp.method.options.paths)]]
+    print(temp.method.options.paths)
+}
+
 temp.method.formulas.paths <- list.of.lists[[3]] 
 temp.method.formulas <- list.of.lists[[4]] 
+
+if(temp.formula == "NONE") {
+    temp.method.formulas <- list("formula")
+    # only keep path of temp.method.formula
+    temp.method.formulas.paths <- temp.method.formulas.paths[[grepl(temp.method.formula, temp.method.formulas.paths)]]
+    print(temp.method.formulas.paths)
+}
 #if(temp.method.option != "NONE") {
 #	temp.method.options <- list(temp.method.option)
 #}
@@ -283,10 +299,6 @@ for(i in 1:length(temp.method.options)) {
 				pattern <- paste0("formula", j, "_", intervals[[p]])
 				temp.method.file <- temp.files[grepl(pattern, temp.files)]
 			}
-
-            #print(temp.method.file)
-			#pred.temp <- readRDS(temp.method.file)
-
 			print(temp.method.file)
 			pred.temp <- readRDS(temp.method.file)
 			temp.train.len <- attr(pred.temp, "train.len")
@@ -632,17 +644,13 @@ for(i in 1:length(temp.method.options)) {
 				combined.score <- c(combined.score, score)
 				combined.pos <- c(combined.pos, calcPosition(leaderboard, h, score))
 			}
-			comparison.board <- cbind(comp, PINBALL_wAVG=combined.score, POS_wAVG=combined.pos)
+			comparison.board <- cbind(comp[, 1:6], PINBALL_wAVG=combined.score, POS_wAVG=combined.pos, comp[, 7:ncol(comp)])
 			means.row <- colMeans(comparison.board[, 3:ncol(comparison.board), drop=FALSE], na.rm=TRUE)
-			print(means.row)
 			comparison.means.row <- cbind(TRAIN.TMS=as.character(load.train.start.dt), TEST.TMS=as.character(last.test.dt), t(data.frame(means.row)))
-			print(comparison.means.row)
 			colnames(comparison.means.row) <- c("TRAIN.TMS", "TEST.TMS", "MAPE_1m", "PINBALL_1m", "POS_1m", "PINBALL_#1", "MAPE_1w", "PINBALL_1w", "MAPE_2w", "PINBALL_2w", "MAPE_3w", "PINBALL_3w", "MAPE_4w", "PINBALL_4w", "PINBALL_wAVG", "POS_wAVG")
-			print(comparison.means.row)
 			comparison.board <- rbind(comparison.board, comparison.means.row)
-			print(comparison.board)
 			row.names(comparison.board) <- c(c(1:test.month.len), "CV MEAN")
-			print(comparison.board)
+			print(head(comparison.board))
 
 			attr(comparison.board, 'htype') <- htypeToString(htype)
 			attr(comparison.board, 'horizon') <- test.month.len 
@@ -670,27 +678,7 @@ for(i in 1:length(temp.method.options)) {
 			cat("\n", file = weekly.scores.path, append = TRUE)
 			appendTableToFile(comparison.board, monthly.scores.path)
 			cat("\n", file = monthly.scores.path, append = TRUE)
-			
-			colnames(comp) <- c("TRAIN.TMS", "TEST.TMS", "MAPE_1m", "PINBALL_1m", "POS_1m", "PINBALL_#1", "MAPE_1w", "PINBALL_1w", "MAPE_2w", "PINBALL_2w", "MAPE_3w", "PINBALL_3w", "MAPE_4w", "PINBALL_4w")
-			#comp <- data.frame(TRAIN.TMS=comp[,1], TEST.TMS=comp[,2], PINBALL_1m=as.numeric(comp[,3]), POS_1m=as.numeric(comp[,4]), PINBALL_1w=as.numeric(comp[,5]), PINBALL_2w=as.numeric(comp[,6]), PINBALL_3w=as.numeric(comp[,7]), PINBALL_4w=as.numeric(comp[,8]))
-			#comp <- data.frame(TRAIN.TMS=comp[,1], TEST.TMS=comp[,2], MAPE_1m=comp[,3], PINBALL_1m=comp[,4], POS_1m=comp[,5], PINBALL_FIRSTPOS=comp[,6], PINBALL_1w=comp[,7], PINBALL_2w=comp[,8], PINBALL_3w=comp[,9], PINBALL_4w=comp[,10])
-			#comp[,3:8] <- sapply(comp[, 3:8], as.numeric)
-
-			combined.score <- c()
-			combined.pos <- c()
-			#ul <- unname(unlist(comp))
-			#print(ul)
-			scores <- rowMeans(comp[, c("PINBALL_1w", "PINBALL_2w", "PINBALL_3w", "PINBALL_4w"), drop=FALSE], na.rm=TRUE)
-			#scores <- apply(comp[,5:8, drop=FALSE], 1, mean, na.rm=TRUE)	
-			for(h in 1:test.month.len) {
-				score <- scores[h]
-				combined.score <- c(combined.score, score)
-				combined.pos <- c(combined.pos, calcPosition(leaderboard, h, score))
-			}
-			comparison.board <- cbind(comp, PINBALL_wAVG=combined.score, POS_wAVG=combined.pos)
-			means.row <- colMeans(comparison.board[, 3:ncol(comparison.board), drop=FALSE], na.rm=TRUE)
-			print(means.row)
-			
+            
 			### IMPORTANT: RESET DATES ###
 			temp.train.dt <- temp.train.start.dt
 			load.train.dt <- load.train.start.dt

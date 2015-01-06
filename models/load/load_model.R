@@ -23,6 +23,8 @@ createLoadFeatures <- function(load.df, start.dt, horizon, htype=2) {
   
   # create daytypes 1-7, 8 for holiday
   daytype <- as.factor(createMaxDayFeatures(tms))
+  simple.daytype <- as.factor(createMinDayFeatures(tms))
+  weekday.daytype <- as.factor(createWeekDayFeatures(tms))
   hour <- createHourFeatures(tms)
   month <- createMonthFeatures(tms)
   
@@ -33,7 +35,7 @@ createLoadFeatures <- function(load.df, start.dt, horizon, htype=2) {
   list.of.seqs <- lapply(tms.year.list, function(x) { return(seq(0,length(x)/num.hours,length.out=length(x))) })
   time.of.year <- c(unlist(list.of.seqs))
   
-  features <- data.frame(TMS=tms, LOAD=load, TOY=time.of.year, DAYT=daytype, MONTH=month, HOUR=hour, HASH=hash)
+  features <- data.frame(TMS=tms, LOAD=load, TOY=time.of.year, DAYT=daytype, SDAYT=simple.daytype, WDAYT=weekday.daytype, MONTH=month, HOUR=hour, HASH=hash)
   return(features)
 }
 
@@ -106,10 +108,12 @@ getLoadFeatures <- function(load.features, start.dt, lag.horizon, horizon, htype
   
   time.of.year <- load.features$TOY[index.seq.target] 
   daytype <- load.features$DAYT[index.seq.target] 
+  simple.daytype <- load.features$SDAYT[index.seq.target] 
+  weekday.daytype <- load.features$WDAYT[index.seq.target] 
   hour <- load.features$HOUR[index.seq.target]
   month <- load.features$MONTH[index.seq.target]
 
-  return(list(TMS=dt.seq.target, Y=target, DLAG=days.lag, WLAG52=weeks52.lag, TOY=time.of.year, DAYT=daytype, MONTH=month, HOUR=hour))
+  return(list(TMS=dt.seq.target, Y=target, DLAG=days.lag, WLAG52=weeks52.lag, TOY=time.of.year, DAYT=daytype, SDAYT=simple.daytype, WDAYT=weekday.daytype, MONTH=month, HOUR=hour))
 }  
 
 assembleLoadFeatures <- function(load.features, avg.temp, start.dt, lag.horizon, horizon, htype) {

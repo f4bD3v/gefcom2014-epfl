@@ -1,22 +1,38 @@
+Rscript TEMPCV.R --predMethod TRUE --predTrain TRUE
+Rscript TEMPCV.R --predMethod TRUE --predTrain TRUE --station 1
+Rscript TEMPCV.R --predMethod TRUE --predTrain TRUE --PCA TRUE
+
+Rscript TEMPCV.R --predMethod MEAN --predTrain TRUE
+Rscript TEMPCV.R --predMethod MEAN --predTrain TRUE --station 1
+Rscript TEMPCV.R --predMethod MEAN --predTrain TRUE --PCA TRUE
+
+
 Rscript TEMPCV.R --predMethod GAM --predTrain TRUE --formula 1
 Rscript TEMPCV.R --predMethod GAM --predTrain TRUE --station 1 --formula 1
 Rscript TEMPCV.R --predMethod GAM --predTrain TRUE --PCA TRUE --formula 1
 Rscript TEMPCV.R --predMethod GAM --predTrain TRUE --formula 2
 Rscript TEMPCV.R --predMethod GAM --predTrain TRUE --formula 3
+Rscript TEMPCV.R --predMethod GAM --predTrain TRUE --formula 4
+Rscript TEMPCV.R --predMethod GAM --predTrain TRUE --formula 5
 
 Rscript TEMPCV.R --predMethod GAM --gamma TRUE --predTrain TRUE --formula 1
 Rscript TEMPCV.R --predMethod GAM --gamma TRUE --predTrain TRUE --formula 2
 Rscript TEMPCV.R --predMethod GAM --gamma TRUE --predTrain TRUE --formula 3
 
 Rscript TEMPCV.R --predMethod LM --predTrain TRUE --formula 1
+Rscript TEMPCV.R --predMethod LM --predTrain TRUE --formula 2
 
-Rscript TEMPCV.R --predMethod NN --predTrain TRUE --hiddenUnits 20 --formula 1
-Rscript TEMPCV.R --predMethod NN --predTrain TRUE --hiddenUnits 25 --formula 1
-Rscript TEMPCV.R --predMethod NN --predTrain TRUE --hiddenUnits 30 --formula 1
+Rscript TEMPCV.R --predMethod NN --predTrain TRUE --formula 1 --hiddenUnits 20 
+Rscript TEMPCV.R --predMethod NN --predTrain TRUE --formula 1 --hiddenUnits 25
+Rscript TEMPCV.R --predMethod NN --predTrain TRUE --formula 1 --hiddenUnits 30
 
-Rscript TEMPCV.R --predMethod RF --predTrain TRUE --ntrees 50 --formula 1
-Rscript TEMPCV.R --predMethod RF --predTrain TRUE --ntrees 100 --formula 1
-Rscript TEMPCV.R --predMethod RF --predTrain TRUE --ntress 150 --formula 1
-Rscript TEMPCV.R --predMethod RF --predTrain TRUE --ntress 500 --formula 1
+Rscript TEMPCV.R --predMethod NN --predTrain TRUE --formula 2 --hiddenUnits 20 
+
+Rscript TEMPCV.R --predMethod RF --predTrain TRUE --formula 1 --ntrees 50 
+Rscript TEMPCV.R --predMethod RF --predTrain TRUE --formula 1 --ntrees 100
+Rscript TEMPCV.R --predMethod RF --predTrain TRUE --formula 1 --ntress 150
+Rscript TEMPCV.R --predMethod RF --predTrain TRUE --formula 1 --ntress 500
+
+Rscript TEMPCV.R --predMethod RF --predTrain TRUE --formula 2 --ntrees 50 
 
 

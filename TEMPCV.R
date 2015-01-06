@@ -264,7 +264,6 @@ method.formula <- temp.methods.formulas[[method]][[formula]]
 writeTempHeader(weekly.scores.path, method, method.formula, "weekly", train.start, train.stop, train.len, str.htype) 
 writeTempHeader(monthly.scores.path, method, method.formula, "monthly", train.start, train.stop, train.len, str.htype)
 
-pred.run.len <- 2
 temp.res <- list()
 
 for(j in 1:pred.run.len) {
@@ -434,9 +433,7 @@ temp.res[[2]] <- weekly.temp.res
 date.period <- paste0(as.character(as.Date(test.start.dt)), "-", as.character(as.Date(test.stop.dt)))
 
 position.board <- cbind(MAPE=res[[1]]$MAPE, PINBALL=res[[1]]$PINBALL)
-print(position.board)
 dates <- res[[1]][1:(nrow(res[[1]])), c(1,2)]
-print(dates)
 position.board <- cbind(dates, position.board)
 row.names(position.board) <- c(1:pred.run.len)#, "MODEL CV MEAN")
 print(position.board)
@@ -496,28 +493,23 @@ combined.score <- c()
 combined.pos <- c()
 
 scores <- rowMeans(comp[, c("PINBALL_1w", "PINBALL_2w", "PINBALL_3w", "PINBALL_4w"), drop=FALSE], na.rm=TRUE)
-print(scores)
 #scores <- apply(comp[,5:8, drop=FALSE], 1, mean, na.rm=TRUE)	
 for(h in 1:pred.run.len) {
 	score <- scores[h]
 	combined.score <- c(combined.score, score)
 }
-comparison.board <- cbind(comp, PINBALL_wAVG=combined.score)
+#comparison.board <- cbind(comp, PINBALL_wAVG=combined.score)
+comparison.board <- cbind(comp[, 1:4], PINBALL_wAVG=combined.score, comp[, 5:ncol(comp)])
 means.row <- colMeans(comparison.board[, 3:ncol(comparison.board), drop=FALSE], na.rm=TRUE)
-print(means.row)
 comparison.means.row <- cbind(TRAIN.TMS=as.character(load.train.start.dt), TEST.TMS=as.character(last.test.dt), t(data.frame(means.row)))
-print(comparison.means.row)
-colnames(comparison.means.row) <- c("TRAIN.TMS", "TEST.TMS", "MAPE_1m", "PINBALL_1m", "MAPE_1w", "PINBALL_1w", "MAPE_2w", "PINBALL_2w", "MAPE_3w", "PINBALL_3w", "MAPE_4w", "PINBALL_4w", "PINBALL_wAVG")
-print(comparison.means.row)
+colnames(comparison.means.row) <- c("TRAIN.TMS", "TEST.TMS", "MAPE_1m", "PINBALL_1m", "PINBALL_wAVG", "MAPE_1w", "PINBALL_1w", "MAPE_2w", "PINBALL_2w", "MAPE_3w", "PINBALL_3w", "MAPE_4w", "PINBALL_4w")
 comparison.board <- rbind(comparison.board, comparison.means.row)
-print(comparison.board)
 row.names(comparison.board) <- c(c(1:pred.run.len), "CV MEAN")
-print(comparison.board)
 
 if(method.option != "NONE") {
-	board.fn <- extensionJoin(paste("comparison_board", getPredictionType(htype, test.horizon), date.period, method, method.option, paste0("formula", formula), "weekly", sep="_"), "rds")
+	board.fn <- extensionJoin(paste("comparison_board", date.period, method, method.option, paste0("formula", formula), sep="_"), "rds")
 } else {
-	board.fn <- extensionJoin(paste("comparison_board", getPredictionType(htype, test.horizon), date.period, method, paste0("formula", formula), "weekly", sep="_"), "rds")
+	board.fn <- extensionJoin(paste("comparison_board", date.period, method, paste0("formula", formula), sep="_"), "rds")
 }
 
 saveRDS(comparison.board, file=pathJoin(scores.path, board.fn), compress=TRUE)
@@ -529,6 +521,8 @@ cat("\n", file = weekly.scores.path, append = TRUE)
 appendTableToFile(comparison.board, monthly.scores.path)
 cat("\n", file = monthly.scores.path, append = TRUE)
 
+print(head(comparison.board))
+
 
 if(pred.train) {
 	htype <- 2
@@ -536,7 +530,6 @@ if(pred.train) {
 	pred.type <- getPredictionType(htype, pred.horizon)
 
 	temp.res.h <- data.frame(temp.res[[1]])
-	print(temp.res.h)
 
 	attr(temp.res.h, 'htype') <- htypeToString(htype)
 	attr(temp.res.h, 'horizon') <- temp.train.month.len + test.month.len 

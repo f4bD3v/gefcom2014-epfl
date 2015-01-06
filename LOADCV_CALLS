@@ -1,3 +1,5 @@
+
+
 Rscript MULTIMETHOD_LOADCV.R --loadPredMethod GAM --loadFormula 1 --tempPredMethod GAM
 Rscript MULTIMETHOD_LOADCV.R --loadPredMethod GAM --loadFormula 2 --tempPredMethod GAM
 Rscript MULTIMETHOD_LOADCV.R --loadPredMethod GAM --loadFormula 3 --tempPredMethod GAM
@@ -19,7 +21,7 @@ Rscript MULTIMETHOD_LOADCV.R --loadPredMethod GAM --loadFormula 2 --tempPredMeth
 Rscript MULTIMETHOD_LOADCV.R --loadPredMethod GAM --loadFormula 3 --tempPredMethod RF
 
 
-Rscript MULTIMETHOD_LOADCV.R --loadPredMethod LM --loadFormula 1 --tempPredMethod GAM
+Rscript MULTIMETHOD_LOADCV.R --loadPredMethod LM --tempPredMethod GAM --loadFormula 1 
 
 Rscript MULTIMETHOD_LOADCV.R --loadPredMethod LM --loadFormula 1 --tempPredMethod TRUE
 
