@@ -668,8 +668,8 @@ for(i in 1:length(temp.method.options)) {
 				combined.score <- c(combined.score, score)
 				combined.pos <- c(combined.pos, calcPosition(leaderboard, h, score))
 			}
-			comparison.board <- cbind(comp[, 1:5], PINBALL_wAVG=combined.score, POS_wAVG=combined.pos, comp[, 7:ncol(comp)])
-			means.row <- colMeans(comparison.board[, 3:ncol(comparison.board), drop=FALSE], na.rm=TRUE)
+			comparison.board <- cbind(comp[, 1:6], PINBALL_wAVG=combined.score, POS_wAVG=combined.pos, comp[, 7:ncol(comp)])
+			means.row <- colMeans(comparison.board[, 4:ncol(comparison.board), drop=FALSE], na.rm=TRUE)
 			comparison.means.row <- cbind(TRAIN.TMS=as.character(load.train.start.dt), TEST.TMS=as.character(last.test.dt), t(data.frame(means.row)))
 			colnames(comparison.means.row) <- c("TRAIN.TMS", "TEST.TMS", "MONTH", "MAPE_1m", "PINBALL_1m", "POS_1m", "MAPE_1w", "PINBALL_1w", "MAPE_2w", "PINBALL_2w", "MAPE_3w", "PINBALL_3w", "MAPE_4w", "PINBALL_4w", "PINBALL_wAVG", "POS_wAVG")
 			comparison.board <- rbind(comparison.board, comparison.means.row)
