@@ -245,7 +245,7 @@ temp.method.formulas <- list.of.lists[[4]]
 load.method.formula <- load.methods.formulas[[load.method]][[load.formula]]
 print(temp.method.options)
 
-#test.month.len <- 2 
+#test.month.len <- 1
 
 for(i in 1:length(temp.method.options)) {
 	curr.temp.method.option <- temp.method.options[[i]]
@@ -651,8 +651,9 @@ for(i in 1:length(temp.method.options)) {
 			cat("\n", file = weekly.scores.path, append = TRUE)
 			appendTableToFile(position.board, monthly.scores.path)
 			cat("\n", file = monthly.scores.path, append = TRUE)
-			
-			colnames(comp) <- c("TRAIN.TMS", "TEST.TMS", "MONTH", "MAPE_1m", "PINBALL_1m", "POS_1m", "PINBALL_#1", "MAPE_1w", "PINBALL_1w", "MAPE_2w", "PINBALL_2w", "MAPE_3w", "PINBALL_3w", "MAPE_4w", "PINBALL_4w")
+			ncoln <- c("TRAIN.TMS", "TEST.TMS", "MONTH", "MAPE_1m", "PINBALL_1m", "POS_1m", "PINBALL_#1", "MAPE_1w", "PINBALL_1w", "MAPE_2w", "PINBALL_2w", "MAPE_3w", "PINBALL_3w", "MAPE_4w", "PINBALL_4w")
+            print(length(ncoln))  
+			colnames(comp) <- ncoln
 			#comp <- data.frame(TRAIN.TMS=comp[,1], TEST.TMS=comp[,2], PINBALL_1m=as.numeric(comp[,3]), POS_1m=as.numeric(comp[,4]), PINBALL_1w=as.numeric(comp[,5]), PINBALL_2w=as.numeric(comp[,6]), PINBALL_3w=as.numeric(comp[,7]), PINBALL_4w=as.numeric(comp[,8]))
 			#comp <- data.frame(TRAIN.TMS=comp[,1], TEST.TMS=comp[,2], MAPE_1m=comp[,3], PINBALL_1m=comp[,4], POS_1m=comp[,5], PINBALL_FIRSTPOS=comp[,6], PINBALL_1w=comp[,7], PINBALL_2w=comp[,8], PINBALL_3w=comp[,9], PINBALL_4w=comp[,10])
 			#comp[,3:8] <- sapply(comp[, 3:8], as.numeric)
@@ -670,8 +671,8 @@ for(i in 1:length(temp.method.options)) {
 			}
 			comparison.board <- cbind(comp[, 1:6], PINBALL_wAVG=combined.score, POS_wAVG=combined.pos, comp[, 7:ncol(comp)])
 			means.row <- colMeans(comparison.board[, 4:ncol(comparison.board), drop=FALSE], na.rm=TRUE)
-			comparison.means.row <- cbind(TRAIN.TMS=as.character(load.train.start.dt), TEST.TMS=as.character(last.test.dt), t(data.frame(means.row)))
-			colnames(comparison.means.row) <- c("TRAIN.TMS", "TEST.TMS", "MONTH", "MAPE_1m", "PINBALL_1m", "POS_1m", "MAPE_1w", "PINBALL_1w", "MAPE_2w", "PINBALL_2w", "MAPE_3w", "PINBALL_3w", "MAPE_4w", "PINBALL_4w", "PINBALL_wAVG", "POS_wAVG")
+			comparison.means.row <- cbind(TRAIN.TMS=as.character(load.train.start.dt), TEST.TMS=as.character(last.test.dt), MONTH="-", t(data.frame(means.row)))
+			colnames(comparison.means.row) <- c("TRAIN.TMS", "TEST.TMS", "MONTH", "MAPE_1m", "PINBALL_1m", "POS_1m", "PINBALL_wAVG", "POS_wAVG", "PINBALL_#1", "MAPE_1w", "PINBALL_1w", "MAPE_2w", "PINBALL_2w", "MAPE_3w", "PINBALL_3w", "MAPE_4w", "PINBALL_4w")
 			comparison.board <- rbind(comparison.board, comparison.means.row)
 			row.names(comparison.board) <- c(c(1:test.month.len), "CV MEAN")
 			print(head(comparison.board))
