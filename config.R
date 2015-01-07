@@ -1,5 +1,5 @@
 ### GEFCOM PROJECT CONFIG ###
-source("util/date_helpers.R")
+source("~/gefcom2014-epfl/util/date_helpers.R")
 
 #** SET FIRST AND LAST DATES OF TRAINING SET **#
 first.dt <- as.POSIXct("01/01/2001 01:00", format="%m/%d/%Y %H:%M", tz="EST")
@@ -20,7 +20,7 @@ holidays <- as.character(holidays)
 ### DEFINE DATES & HORIZON ###
 
 #** TEST DATES **#
-test.month.len <- 13
+test.month.len <- 14
 
 test.stop.dt <- last.dt 
 test.start.dt <- subMonths(addHours(test.stop.dt, 1), test.month.len)

@@ -220,14 +220,20 @@ createMaxDayFeatures <- function(dt.vec) {
 }
 
 createMinDayFeatures <- function(dt.vec) {
-  days <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", "Holiday")
-  nums <- c(2, 2, 2, 2, 2, 1, 1, 3)
+  days <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")#, "Holiday")
+  nums <- c(2, 2, 2, 2, 2, 1, 1),# 3)
   return(mapDayFeatures(dt.vec))
 }
 
 createDayFeatures <- function(dt.vec) {
   days <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", "Holiday")
   nums <- c(2, 3, 3, 3, 4, 5, 1, 6)
+  return(mapDayFeatures(dt.vec))
+}
+
+createWeekDayFeatures <- function(dt.vec) {
+  days <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+  nums <- c(2, 3, 4, 5, 6, 7, 1)
   return(mapDayFeatures(dt.vec))
 }
 
