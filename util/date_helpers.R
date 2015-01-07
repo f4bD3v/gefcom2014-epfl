@@ -168,12 +168,16 @@ subHour <- function(dt) {
 ### LOAD specific
 
 extractDaytype <- function(x, y) {
-  #print(grep(as.character(as.Date(x)), y, fixed=TRUE))
-  dtc <- as.character(as.Date(x, tz="EST"))
-  if(dtc %in% y) {
-    return("Holiday")
-  } else {
+  if(y == FALSE) {
     return(weekdays(x))
+  } else {
+      #print(grep(as.character(as.Date(x)), y, fixed=TRUE))
+      dtc <- as.character(as.Date(x, tz="EST"))
+      if(dtc %in% y) {
+        return("Holiday")
+      } else {
+        return(weekdays(x))
+      }
   }
 }
 
@@ -205,10 +209,9 @@ reclassifyGapDays <- function(day.types) {
   return(day.types)
 }
 
-mapDayFeatures <- function(dt.vec, days, nums) {
-  day.types <- unlist(lapply(dt.vec, extractDaytype, holidays))
-  #day.types.reclass <- reclassifyGapDays(day.types)
-  day.types.reclass <- day.types
+mapDayFeatures <- function(dt.vec, days, nums, ifholidays, reclass) {
+  day.types <- unlist(lapply(dt.vec, extractDaytype, ifholidays))
+  if(reclass) day.types.reclass <- reclassifyGapDays(day.types) else day.types.reclass <- day.types
   day.features <- mapvalues(day.types.reclass, from=days, to=nums)
   return(as.numeric(day.features))
 }
@@ -216,25 +219,25 @@ mapDayFeatures <- function(dt.vec, days, nums) {
 createMaxDayFeatures <- function(dt.vec) {
   days <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", "Holiday")
   nums <- c(2, 3, 4, 5, 6, 7, 1, 8)
-  return(mapDayFeatures(dt.vec, days, nums))
+  return(mapDayFeatures(dt.vec, days, nums, holidays, FALSE))
 }
 
 createMinDayFeatures <- function(dt.vec) {
   days <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")#, "Holiday")
-  nums <- c(2, 2, 2, 2, 2, 1, 1),# 3)
-  return(mapDayFeatures(dt.vec))
+  nums <- c(2, 2, 2, 2, 2, 1, 1)# 3)
+  return(mapDayFeatures(dt.vec, days, nums, FALSE, FALSE))
 }
 
 createDayFeatures <- function(dt.vec) {
   days <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", "Holiday")
   nums <- c(2, 3, 3, 3, 4, 5, 1, 6)
-  return(mapDayFeatures(dt.vec))
+  return(mapDayFeatures(dt.vec, days, nums))
 }
 
 createWeekDayFeatures <- function(dt.vec) {
   days <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
   nums <- c(2, 3, 4, 5, 6, 7, 1)
-  return(mapDayFeatures(dt.vec))
+  return(mapDayFeatures(dt.vec, days, nums, FALSE, FALSE))
 }
 
 createMonthFeatures <- function(dt.vec) {

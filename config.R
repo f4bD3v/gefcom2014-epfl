@@ -20,7 +20,7 @@ holidays <- as.character(holidays)
 ### DEFINE DATES & HORIZON ###
 
 #** TEST DATES **#
-test.month.len <- 14
+test.month.len <- 14 
 
 test.stop.dt <- last.dt 
 test.start.dt <- subMonths(addHours(test.stop.dt, 1), test.month.len)
