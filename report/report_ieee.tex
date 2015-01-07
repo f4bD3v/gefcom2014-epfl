@@ -78,6 +78,10 @@
 \usepackage[noadjust]{cite}
 \usepackage{filecontents}
 \usepackage[parfill]{parskip}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage{booktabs}
+
 
 % *** MISC UTILITY PACKAGES ***
 %
@@ -427,6 +431,13 @@ The output of such forecasts can either be point forecasts or estimates of the p
 Electricity demands follow a nonlinear, volatile pattern subject to several exogenous variables such weather conditions, randomness in human behavior leading to randomness in demand and economic conditions and demographic changes. In GEFCom 2014 the exogenous variables are limited to weather conditions in the form of recorded temperature at several sites and calendar effects such as the effects of weekends and holidays on the electricity demand.
 In this report we analyse the predictions produced by algorithms that are capable of capturing the nonlinear dependencies between these exogeneous variables and the load such as General Additive Models, Random Forests, Multilayer Perceptrons. We do not strive to build any algorithms ourselves, but employ the various implementations in R of the mentioned algorithms.
 
+%In today's competitive and dynamic environment, more and more decision making processes in the power and energy industry are relying on probabilistic forecasts. The applications of probabilistic energy forecasts spread across planning and operations of the entire energy value chain.
+
+%The Global Energy Forecasting Competition 2014 (GEFCom2014) will bring together state-of-the-art techniques and methodologies for probabilistic energy forecasting. GEFCom2014 features four tracks: Probabilistic Electric Load Forecasting, Probabilistic Electricity Price Forecasting, Probabilistic Wind Power Forecasting and Probabilistic Solar Power Forecasting. For more background reading materials, please visit http://blog.drhongtao.com/2014/08/recommended-papers-for-gefcom2014-contestants.html.
+
+%Objective
+%The topic of the probabilistic electric load forecasting track is to forecast the probabilistic distribution (in quantiles) of the hourly loads for one utility on a rolling basis.
+
 \section{Review of Related Work}
 Review previous work from Gefcom 2012 and beyond including papers with related approaches including but not necessarily limited to those that can be found under the following link: http://blog.drhongtao.com/2014/08/recommended-papers-for-gefcom2014-contestants.html. Distinguish between approaches to temperature and load prediction.\par
 Probabilistic Electric Load Forecasting: A Tutorial Review
@@ -451,15 +462,34 @@ The dataset provided by GEFCom 2014 includes hourly historical load and weather 
 The complete data set acted both as training and validation set except for the first and last month of the data published for the reason that the data was released on a weekly basis. It consists of 15 spreadhseets in the format of Comma-Seperated Values (CSV) for the load forecasting track. The first spreadsheet contains data starting from 01/01/2001 up until midnight on the 10/01/2014 at 1am from when on the incremental spreadsheets released every week contain only one month of data.\par
 The forecasts were required to be made starting from 10/01/2010 on a monthly rolling basis for 15 months. The nature of the data provided required the contestants to produce their own temperature forecasts for the month ahead in the dataset.\par
 
+LOAD: one utility! Domestic + Industrial --> less nice patterns? --> less impact of holiday effect?
+
+%
+
 \subsection{Evaluation Metrics}
 The Evaluation Metric employed to score the contestants' submissions of quantile forecasts is the tilted loss/error function also known as the pinball loss/error function. In the following paragraphs let $y$ denote an observation and $\hat{y}$ denote a corresponding forecast while $\xi$ is defined as the residual $y-\hat{y}$.\par
 TODO: Include short explanation.
+\vspace*{3cm}
 \[
   L_{\tau}(\xi)=\begin{cases} \tau \xi & \text{if } \xi \geq 0 \\
                                           (\tau-1)\xi & \text{if } \xi < 0 
                                   \end{cases} \quad\text{where } \xi=(y-\hat{y})
 \]
 %\tau ist Steigung wenn \xi>=0 und Gefälle wenn \xi<0
+
+%For each time period throughout the forecast horizon, the participants should provide the 0.01, 0.02, ..., 0.99 quantiles -- call these q_1,...q_99, with q_0=-infinity or the natural lower bound, and q_100=infinity or the natural upper bound. The full predictive densities composed by these quantile forecasts are to be evaluated by the quantile score calculated through the pinball loss function. 
+
+%For a quantile forecast q_a with a/100 as the target quantile, this score L is defined as:
+
+%L(q_a, y) = (1 - a/100) * (q_a - y), if y<q_a;
+                %a/100 * (y - q_a), if y>=q_a
+
+%where y is the observation used for verification, a = 1, 2, ..., 99.
+
+%To evaluate the full predictive densities, this score is then averaged over all target quantiles, from 0.01 to 0.99, for all time periods throughout the forecast horizon for all zones. The lower the score, the better the forecasts are. (see Rob Hyndman’s blog for a more equation-friendly version: http://robjhyndman.com/hyndsight/gefcom2014/ ) 
+
+%Every week, the entry with the lowest score is automatically selected as the weekly score for the team. The final score is the trimmed mean of the weekly scores. The highest and lowest weekly scores are discarded. The participants are required to submit entries for at least 9 out of 12 weeks during the scoring period to be eligible for a position in the final leaderboard. 
+
 
 \begin{figure}[ht!]
 \centering
@@ -489,36 +519,142 @@ An annoying feature of the dataset is that the timestamps are not saved in the i
 %However, had to make slight modifications to make it work
 %Still didn't work 100%, lost one week on this
 
-\subsection{Data Selection}
+\subsection{Temperature Data Selection}
 %$Corr_X(m) = \frac{\mathbb{E}\[X_t-\mu_x)(X_{t+m})\]}{\var_X}$
-The Cross Correlations of the temperature series of the 25 weather stations suggest that they can be explained to over 90\% by the first series.\par
-[include correlation plots here]\par
-A temperature of 60 degrees Fahrenheit would therefore allow for an error of maximum 6 degrees of Fahrenheit or 3 degrees Celsius respectively. As we will see later in this report this error is negligable when taking into account the inaccuracy of/the error introduced in the temperature prediction.
+We use the average temperature of all weather stations at any hour $i$ as the basis series for our temperature forecasts (Figure \ref{subfig:avg-temp-2012}).
+As the basis for the load forecasting we use the average over all the temperature stations provided in the dataset. In other words, we use the average district temperature to predict the district utility load.\par
 
+\cite{Fan2010} temperature highly correlated $\rightarrow$ use average
+however, did not use temperature differences: would have led to 25x25 more features
+
+In another approach we compute the cross-correlations of the 25 weather station's series (Figure \ref{fig:temp-stations-cc}). These suggest that the district temperature can be explained on average to over 90\% by the first series.\par
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=\linewidth]{gfx/weather-station-cc-plots_series1-6_lag5.pdf}
+\caption{Cross Correlation Plots of Temperature Station 1 Series with Series of Temperature Stations 1-6. Cross Correlations for Stations 7-25 ommitted for convenience of display.}
+\label{fig:temp-stations-cc}
+\end{figure}
+A temperature of 60 degrees Fahrenheit would therefore allow for an error of maximum 6 degrees of Fahrenheit or 3 degrees Celsius respectively. As we will see later in this report this error is negligible when taking into account the inaccuracy of/the error introduced in the temperature prediction.\par
+
+\begin{figure}[!ht]
+\centering
+\begin{subfigure}[b]{.6\linewidth}
+\includegraphics[width=\linewidth]{gfx/avg-temp-2011.pdf}
+\caption{Average Zonal Temperature during July 2011}
+\label{subfig:avg-temp-2012}
+\end{subfigure}
+\quad
+\begin{subfigure}[b]{.6\linewidth}
+\includegraphics[width=\linewidth]{gfx/temp-station1-2011.pdf}
+\caption{Temperature of 1st Weather Station during July 2011}
+\label{subfig:temp-station1-2012}
+\end{subfigure}
+\end{figure}
 
 \section{Feature Selection}
-Description of features obtained from the data. 
-Name all features in this part or only the ones in the final selection? 
+In the following paragraphs we explain the methodology we use to obtain our final feature selection for both temperature and load forecasting. The choice of features is limited to calendar features for temperature forecasting, because the only additional data allowed in the competition are Federal US holidays and the forecasting horizon is set to 1 month ahead.
+\subsection{Time Lags}
+First of all, we want to find out which previous values can be useful in a prediction. Given a time horizon of 1 month we would like to forecast the whole month using only one model for reasons of convenience. This circumstance induces a time lag of minimum 28 days for the month of february. For simplicity of implementation we define the same minimum lag of 31 for every month of the year.   
+In order to choose the lag variables we interprete the cross-correlation of observations $y_i$ and $y_{i-k}$, for different hourly lags $k=1,2,..$, of both temperature and load time series in (Figure \ref{fig:temp-lags}).
+This cross-correlation of observations is known in statistics as Autocorrelation and demonstrates the similarity of observations in a series as a function of the time lag between them.
+% series are not Second Order Stationary Processes?
+%When your data is nonstationary (inhomogeneous), autocorrelation can still be defined and computed, but will now depend on the pivot (=reference) point as well, nut just the distance (=delay, lag) between points. As a result, the autocorrelation becomes a functional, no longer a function. In the discretized (sampled) case, this functional becomes a matrix.
+Using the empirical mean and standard deviation of our target series $Y=\{y_1, y_2, \dots, y_i, \dots, y_N\}$ we can compute the autocorrelation for lag k with:
+\[
+  \mathcal{R}(k)=\frac{\mathbb{E}\left[(y_i-\mu)(y_{i-k}-\mu)\right]}{\sigma^2}
+\]
 
-Use this part to motivate selection of time of year (TOY) variable:\par
-The effect of the lag on the Time Series Correlation Coefficient can be demonstrated using the Autocorrelation function acf() of the R stats package. Here we display five plots showing the Autocorrelation Function for different maximum lags: 
-\begin{figure}[h!]
+As can be seen in both figure \ref{subfig:avg-temp-7days} and \ref{subfig:temp-station1-7days} the highest autocorrelations occur with a frequency/periodicity of 24 hours. Therfore we choose 24 hours as the basis constant for selecting the time lags of our predictions. The average temperature series in the former figure displays less variance in the correlations than the latter because the hourly temperature is less extreme due to zonal averaging. 
+
+\begin{figure}[!ht]
 \centering
-\includegraphics[width=\linewidth]{../data/analysis/acf-load-lag-var-days_font.pdf}
-\caption{Plots of Autocorrelation Function Estimates for hourly load data in MW for different maximum lags.}
-\label{fig:load-acf}
+\begin{subfigure}[b]{.49\linewidth}
+\includegraphics[width=\linewidth]{gfx/acf_avg_temp_7days.pdf}
+\caption{7 days Autocorrelation}
+\label{subfig:avg-temp-7days}
+\end{subfigure}
+\begin{subfigure}[b]{.49\linewidth}
+\includegraphics[width=\linewidth]{gfx/acf_temp_station1_7days.pdf}
+\caption{7 days Autocorrelation}
+\label{subfig:temp-station1-7days}
+\end{subfigure}
+\caption{..}
+\label{fig:temp-lags}
 \end{figure}
-As can be seen the correlation diminishes exponentially up until a lag of 72h from any point in the time series, then stays more or less constant for up to 7-8 days, whereafter it diminishes near linearly (up to a lag of 35 days).\par 
-Autocorrelation plots for temperature and load side by side for one year (daily avg)\par
-include seasonal decompositions?
+
+Figure \ref{fig:acf-load} shows the autocorrelation function of the load series for different maximum lags. As can be seen the load correlations also have a periodicity of 24 hours (\ref{subfig:acf-load-7days} ). The other subfigures show that after an initial exponential decrease the correlations decrease near linearly. Since the type of day has an influence on the utility demand (Section \ref{sec:calendar}), we set the basis for time lags to $7\cdot24$ hours for the load and the minimum time lag for monthly load forecasts therefore to 35 days.
+
+\begin{figure}[!ht]
+\centering
+\begin{subfigure}[b]{.49\linewidth}
+\includegraphics[width=\linewidth]{gfx/acf-load-7days.pdf}
+\caption{7 days Autocorrelation}
+\label{subfig:acf-load-7days}
+\end{subfigure}
+\begin{subfigure}[b]{.49\linewidth}
+\includegraphics[width=\linewidth]{gfx/acf-load-35days.pdf}
+\caption{35 days Autocorrelation}
+\label{subfig:acf-load-7days}
+\end{subfigure}
+\caption{Autocorrelation Function Estimates for hourly load data in MW for different maximum lags}
+\label{fig:acf-load}
+\end{figure}
 
 \subsection{Calendar Features}
-hour, TOY vs. month
-\cite{Fan2010}
-\cite{Hyndman2010}
+\label{sec:calendar}
+Figures \ref{fig:temp-lags} and \ref{fig:acf-load} have shown both temperature and load series to possess daily frequency. We therefore extract the hour of the day from the datetimes and use it as a feature. 
 
-\section{Models}
-Description of the Models (LM), GAM (more extensive), NN, RF
+Figure \cite{fig:seasonality} demonstrates the seasonal change of temperature and load throughout the year. In order to capture the seasonality in our models for both temperature and load, we use the time of the year as a feature. We indicate the progress of the current year with a sequence $\text{TOY} \in [0,1]$ \cite{Fan2010}. We dropped the original categorical variable indicating the present month in favor of the time of year feature (validated by experiment.) 
+
+\begin{figure}[!ht]
+\centering
+\begin{subfigure}[b]{.49\linewidth}
+\includegraphics[width=\linewidth]{gfx/daily-avg-temp-1year.pdf}
+\caption{Autocorrelation Estimates for daily average district temperature.}
+\label{subfig:acf-temp-1year}
+\end{subfigure}
+\begin{subfigure}[b]{.49\linewidth}
+\includegraphics[width=\linewidth]{gfx/avg-daily-load-1year.pdf}
+\caption{Autocorrelation Estimates for daily average district load.}
+\label{subfig:acf-load-1year}
+\end{subfigure}
+\caption{Autocorrelation Function Estimates for daily averages of both district temperature and load for 1 year.}
+\label{fig:seasonality}
+\end{figure}
+
+%NOTE: The contestants are NOT allowed to use external data other than what's provided in this competition. One exception is the load forecasting track, where the contestants can use U.S. federal holidays (http://archive.opm.gov/Operating_Status_Schedules/fedhol/2014.asp) in the models. Violation of this rule will result in disqualification.
+The features we discussed so far are proven useful for both temperature and load forecasting later in this report (Section \ref{}). The nature of the load data allows us to proceed with the extraction of another feature, the day of the week. Energy consumption does not only depend on the climatic circumstances, but also directly on the calendar. Consumption patterns vary between the different days of the week and holidays (find source). The energy utility data does not show clear patterns when probing (Figure coming up). Nevertheless, as proposed in \cite{Hyndman2010} we use different approaches of marking the days of the week, numbering the days of the week from 1 (Sunday) to 7 (Saturday) and assigning weekdays and weekend days with 1 and 2 respectively.\par
+The only external data source allowed for the GEFCom load forecasting track are \href{http://archive.opm.gov/Operating\_Status\_Schedules/fedhol/2014.asp}{U.S. federal holidays} for the time span of the provided data. This gives us the possibility to additionally detect holidays and assign them another integer (8) in the approach of consecutively numbering the days of the week.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lllllllll@{}}
+\toprule
+ & Mon & Tue & Wed & Thu & Fri & Sat & Sun & Holiday \\ \midrule
+Weekdays vs -end & 2 & 2 & 2 & 2 & 2 & 1 & 1 & - \\
+Weekdays & 2 & 3 & 4 & 5 & 6 & 7 & 1 & - \\
+ & 2 & 3 & 4 & 5 & 6 & 7 & 1 & 8 \\ \bottomrule
+\end{tabular}
+\caption{My caption}
+\label{my-label}
+\end{table}
+
+\section{Forecasting Methods}
+(find paper using generative additive models for forecasting)
+As forecasting methods we use a generalization of the Linear Model, the Generalized Additive Model (GAM), and the established machine learning methods Multilayer Layer Perceptron (MLP) and Random Forest (RF). Due to the limited scope of the project we did not use our own implementations, but rather those that have been made available through R packages.
+
+\subsection{Generative Additive Models (GAM)}
+\vspace*{5cm}
+stuff
+
+\subsection{MLP}
+\vspace*{2cm}
+
+\subsection{RF}
+\vspace*{2cm}
+
+\section{Pipeline}
+\vspace*{10cm}
 
 \section{Analysis}
 What combination of features and models for temperature and load provide us with a good prediction accuracy with respect to Gefcom leaderboard?

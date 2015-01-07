@@ -5,6 +5,21 @@ savePlot <- function(path, fn, begin.dt, PLOTFUN, param.list) {
   dev.off()
 }
 
+plotSimple <- function(tms, y, xlabel, ylabel, title, ylimits) {
+  plot(y ~ tms, col="blue", type="l", ylim=ylimits, xlab=xlabel, ylab=ylabel, main=title, xaxt='n')  
+  axis.Date(1, at=tms[hour(tms)%%24==1], format="%H")
+  #axis(1, dm$Date, format(dm$Date, "%b %d"), cex.axis = .7)
+}
+
+plotLoad <- function(tms, y, xlabel, ylabel, title, ylimits) {
+  plot(y ~ tms, col="blue", type="l", ylim=ylimits, xlab=xlabel, ylab=ylabel, main=title, xaxt="n")  
+  #axis.Date(1, at=tms[hour(tms)%%24==1], format="%d-%m-%Y", labels=TRUE)
+  # %a - abbreviated weekday name
+  seq <- tms[hour(tms)%%24==12]
+  #axis.Date(1, at=seq, format=("%a %d %b"), tick=FALSE)
+  axis(1, at=seq, labels=format(seq, "%a %d %b"), cex.axis=.9)
+}
+
 plotTraining <- function(tms, target, fit, residuals, xlabel, ylabel, title) {
   print(tail(target))
   print(tail(fit))
