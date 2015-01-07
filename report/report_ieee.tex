@@ -651,6 +651,14 @@ stuff
 \vspace*{2cm}
 
 \subsection{RF}
+create bunch of random decision trees automatically
+The algorithm to induce a random forest will create a bunch of random decision trees automatically. Since the trees are generated at random, most won't be all that meaningful to learning your classification/regression problem (maybe 99.9\% of trees).
+So what good are 10000 (probably) bad models? Well it turns out that they really aren't that helpful. But what is helpful are the few really good decision trees that you also generated along with the bad ones.
+When you make a prediction, the new observation gets pushed down each decision tree and assigned a predicted value/label. Once each of the trees in the forest have reported its predicted value/label, the predictions are tallied up and the mode vote of all trees is returned as the final prediction.
+Simply, the 99.9\% of trees that are irrelevant make predictions that are all over the map and cancel each another out. The predictions of the minority of trees that are good top that noise and yield a good prediction.
+
+method that does not require much tuning for capturing nonlinear dependencies, simply number of trees
+be vary of overfitting
 \vspace*{2cm}
 
 \section{Pipeline}
