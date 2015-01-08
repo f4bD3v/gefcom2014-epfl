@@ -282,9 +282,9 @@ for(j in 1:pred.run.len) {
 		test.features <- getFeatures(temp.features, pred.start, lag, pred.horizon, htype)
 
 		train.features.fn <- paste0(paste("train-temp-features", paste0("start", as.character(as.Date(train.start))), "instance", j, pred.type, sep="_"), ".rds")
-		saveRDS(train.features, file=pathJoin(features.path, train.features.fn), compress=TRUE)
+		#saveRDS(train.features, file=pathJoin(features.path, train.features.fn), compress=TRUE)
 		test.features.fn <- paste0(paste("test-temp-features", paste0("start", as.character(as.Date(pred.start))), "instance", j, pred.type, sep="_"), ".rds")
-		saveRDS(test.features, file=pathJoin(features.path, test.features.fn), compress=TRUE)
+		#saveRDS(test.features, file=pathJoin(features.path, test.features.fn), compress=TRUE)
 
 		pred.stop <- getStopDtByHorizon(pred.start, pred.horizon, htype)
 		test.dt.seq <- seq(pred.start, pred.stop, by="hour")

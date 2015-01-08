@@ -432,13 +432,13 @@ for(i in 1:length(temp.method.options)) {
 
 					train.features.fn <- extensionJoin(paste("train-load-features", paste0("start", as.character(as.Date(load.train.dt))), "instance", ml, pred.type, sep="_"), "rds")
 					train.features.path <- pathJoin(load.features.path, train.features.fn)
-					saveRDS(load.train.features, file=train.features.path, compress = TRUE)
+					#saveRDS(load.train.features, file=train.features.path, compress = TRUE)
 
                     load.test.features <- cbind(load.test.features, FIT=load.fit)
 
 					test.features.fn <- extensionJoin(paste("test-load-features", paste0("start", as.character(as.Date(test.dt))), "instance", ml, pred.type, sep="_"), "rds")
 					test.features.path <- pathJoin(load.features.path, test.features.fn)
-					saveRDS(load.test.features, file=test.features.path, compress = TRUE)
+					#saveRDS(load.test.features, file=test.features.path, compress = TRUE)
 					
 
 					if(grepl("(GAM|LM)", curr.temp.method.option)) {
