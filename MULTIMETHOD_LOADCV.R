@@ -340,8 +340,8 @@ for(i in 1:length(temp.method.options)) {
 			date.period <- paste0(as.character(as.Date(test.start.dt)), "-", as.character(as.Date(test.stop.dt)))
 			print(date.period)
 			if(grepl("(GAM|LM)", curr.temp.method.option)) {
-				all.weekly.fits.fn <- extensionJoin(paste("weekly", "load-fit-series", load.method, date.period, "all", "?", "temp-model", ptemp.method, paste0("formula", j), intervals[[p]], sep="_"), "rds")
-				all.monthly.fits.fn <- extensionJoin(paste("monthly", "load-fit-series", load.method, date.period, "all", "?", "temp-model", ptemp.method, paste0("formula", j), intervals[[p]], sep="_"), "rds")
+				all.weekly.fits.fn <- extensionJoin(paste("weekly", "load-fit-series", load.method, date.period, "all", "?", "temp-model", ptemp.method.option, paste0("formula", j), intervals[[p]], sep="_"), "rds")
+				all.monthly.fits.fn <- extensionJoin(paste("monthly", "load-fit-series", load.method, date.period, "all", "?", "temp-model", ptemp.method.option, paste0("formula", j), intervals[[p]], sep="_"), "rds")
 			} else if(no.temp.formula) {
 				all.weekly.fits.fn <- extensionJoin(paste("weekly", "load-fit-series", load.method, date.period, "all", "?", "temp-model", ptemp.method, sep="_"), "rds")
 				all.monthly.fits.fn <- extensionJoin(paste("monthly", "load-fit-series", load.method, date.period, "all", "?", "temp-model", ptemp.method, sep="_"), "rds")
@@ -392,7 +392,7 @@ for(i in 1:length(temp.method.options)) {
 					load.model <- train.result[["model"]]  
 					if(h==1) {
 						if(grepl("(GAM|LM)", curr.temp.method.option)) {
-							load.model.fn <- extensionJoin(paste("monthly", "model", load.method, "?", ptemp.method, paste0("formula", j), intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
+							load.model.fn <- extensionJoin(paste("monthly", "model", load.method, "?", ptemp.method.option, paste0("formula", j), intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
 						} else if(no.temp.formula) {
 							load.model.fn <- extensionJoin(paste("monthly", "model", load.method, "?", ptemp.method, intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
 						} else {
@@ -400,7 +400,7 @@ for(i in 1:length(temp.method.options)) {
 						}
 					} else {
 						if(grepl("(GAM|LM)", curr.temp.method.option)) {
-							load.model.fn <- extensionJoin(paste("weekly", "model", load.method, "?", ptemp.method, paste0("formula", j), intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
+							load.model.fn <- extensionJoin(paste("weekly", "model", load.method, "?", ptemp.method.option, paste0("formula", j), intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
 						} else if(no.temp.formula) {
 							load.model.fn <- extensionJoin(paste("weekly", "model", load.method, "?", ptemp.method, intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
 						} else {
@@ -442,7 +442,7 @@ for(i in 1:length(temp.method.options)) {
 					
 
 					if(grepl("(GAM|LM)", curr.temp.method.option)) {
-						monthly.res.fn <- extensionJoin(paste("monthly", "load-fit-series", load.method, as.Date(test.dt), "?", "temp-model", ptemp.method, paste0("formula", j), intervals[[p]], "instance", ml, sep="_"), "rds")
+						monthly.res.fn <- extensionJoin(paste("monthly", "load-fit-series", load.method, as.Date(test.dt), "?", "temp-model", ptemp.method.option, paste0("formula", j), intervals[[p]], "instance", ml, sep="_"), "rds")
 					} else if(no.temp.formula) {
 						monthly.res.fn <- extensionJoin(paste("monthly", "load-fit-series", load.method, as.Date(test.dt), "?", "temp-model", ptemp.method, "instance", ml, sep="_"), "rds")
 					} else {
@@ -598,7 +598,7 @@ for(i in 1:length(temp.method.options)) {
 				    appendTableToFile(score.board[[h]], monthly.scores.path)
 				    cat("\n", file = monthly.scores.path, append = TRUE)
 					if(grepl("(GAM|LM)", curr.temp.method.option)) {
-						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", "1m", load.method, date.period, "all", "?", "temp-model", ptemp.method, paste0("formula", j), intervals[[p]], sep="_"), "rds")
+						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", "1m", load.method, date.period, "all", "?", "temp-model", ptemp.method.option, paste0("formula", j), intervals[[p]], sep="_"), "rds")
 					} else if(no.temp.formula) {
 						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", "1m", load.method, date.period, "all", "?", "temp-model", ptemp.method, sep="_"), "rds")
 					} else {
@@ -610,7 +610,7 @@ for(i in 1:length(temp.method.options)) {
 				    appendTableToFile(score.board[[h]], weekly.scores.path)
 				    cat("\n", file = weekly.scores.path, append = TRUE)
 					if(grepl("(GAM|LM)", curr.temp.method.option)) {
-						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", "5wrest", load.method, date.period, "all", "?", "temp-model", ptemp.method, paste0("formula", j), intervals[[p]], sep="_"), "rds")
+						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", "5wrest", load.method, date.period, "all", "?", "temp-model", ptemp.method.option, paste0("formula", j), intervals[[p]], sep="_"), "rds")
 					} else if(no.temp.formula) {
 						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", "5wrest", load.method, date.period, "all", "?", "temp-model", ptemp.method, sep="_"), "rds")
 					} else {
@@ -623,7 +623,7 @@ for(i in 1:length(temp.method.options)) {
 					htype = var.set[1]
 					test.horizon = var.set[2]
 					if(grepl("(GAM|LM)", curr.temp.method.option)) {
-						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", getPredictionType(htype, test.horizon), load.method, date.period, "all", "?", "temp-model", ptemp.method, paste0("formula", j), intervals[[p]], sep="_"), "rds")
+						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", getPredictionType(htype, test.horizon), load.method, date.period, "all", "?", "temp-model", ptemp.method.option, paste0("formula", j), intervals[[p]], sep="_"), "rds")
 					} else if(no.temp.formula) {
 						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", getPredictionType(htype, test.horizon), load.method, date.period, "all", "?", "temp-model", ptemp.method, sep="_"), "rds")
 					} else {
