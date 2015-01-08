@@ -11,6 +11,13 @@ plotSimple <- function(tms, y, xlabel, ylabel, title, ylimits) {
   #axis(1, dm$Date, format(dm$Date, "%b %d"), cex.axis = .7)
 }
 
+plotSet <- function(tms, y, xlabel, ylabel, title, ylimits) {
+  plot(y ~ tms, col="blue", type="l", ylim=ylimits, xlab=xlabel, ylab=ylabel, main=title, xaxt='n')  
+  seq <- seq(tms[1], tms[length(tms)], by='years')# tms[hour(tms)%%(24*365)==3]
+  #axis(1, dm$Date, format(dm$Date, "%b %d"), cex.axis = .7)
+  axis(1, at=seq, labels=format(seq, "%d/%y"), cex.axis=.9)
+
+}
 plotLoad <- function(tms, y, xlabel, ylabel, title, ylimits) {
   plot(y ~ tms, col="blue", type="l", ylim=ylimits, xlab=xlabel, ylab=ylabel, main=title, xaxt="n")  
   #axis.Date(1, at=tms[hour(tms)%%24==1], format="%d-%m-%Y", labels=TRUE)
