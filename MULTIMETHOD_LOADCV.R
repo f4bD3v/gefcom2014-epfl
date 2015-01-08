@@ -69,9 +69,9 @@ temp.method.option <- "NONE"
 temp.method.options <- list()
 # fill through filesystem
 
-temp.formula <- "NONE"
+temp.formula.i <- "NONE"
 if(!is.null(opt$tempFormula)) {
-	temp.formula <- opt$tempFormula
+	temp.formula.i <- opt$tempFormula
 }
 temp.gamma <- FALSE
 if(!is.null(opt$tempGamma)) {
@@ -231,19 +231,13 @@ if(temp.ntrees != -1 || temp.hidden.units != -1) {
     temp.method.options <- list(temp.method.option)
     print(temp.method.options)
     # only keep path of temp.method.option
-    temp.method.options.paths <- temp.method.options.paths[[grepl(temp.method.option, temp.method.options.paths)]]
+    temp.method.options.paths <- temp.method.options.paths[grepl(temp.method.option, unlist(temp.method.options.paths))]
     print(temp.method.options.paths)
 }
 
 temp.method.formulas.paths <- list.of.lists[[3]] 
 temp.method.formulas <- list.of.lists[[4]] 
 
-if(temp.formula == "NONE") {
-    temp.method.formulas <- list("formula")
-    # only keep path of temp.method.formula
-    temp.method.formulas.paths <- temp.method.formulas.paths[[grepl(temp.method.formula, temp.method.formulas.paths)]]
-    print(temp.method.formulas.paths)
-}
 #if(temp.method.option != "NONE") {
 #	temp.method.options <- list(temp.method.option)
 #}
@@ -251,14 +245,29 @@ if(temp.formula == "NONE") {
 load.method.formula <- load.methods.formulas[[load.method]][[load.formula]]
 print(temp.method.options)
 
+#test.month.len <- 1
+
 for(i in 1:length(temp.method.options)) {
 	curr.temp.method.option <- temp.method.options[[i]]
 	print(curr.temp.method.option)
 	temp.formulas <- temp.method.formulas[[curr.temp.method.option]]
 	temp.formula.paths <- temp.method.formulas.paths[[curr.temp.method.option]]
+    print(temp.formulas)
+    if(temp.formula.i != "NONE") {
+        # use temp.formula as index --> formulas are sorted
+        temp.formulas <- list(temp.formulas[[temp.formula.i]])
+        dirn <- paste("formula", temp.formula.i, sep="_")
+        logv <- grepl(dirn, unlist(temp.formula.paths), perl=TRUE)
+        print(logv)
+        temp.formula.paths <- temp.formula.paths[logv]
+        print(temp.formula.paths)
+        print("succes")
+    }
 	for(j in 1:length(temp.formulas)) {
 		temp.formula <- temp.formulas[[j]]
+		print(temp.formula)
 		temp.formula.path <- temp.formula.paths[[j]]
+		print(temp.formula.path)
 		for(p in 1:length(intervals)) {
 			print(curr.temp.method.option)
 			print(temp.formula.path)
@@ -295,10 +304,14 @@ for(i in 1:length(temp.method.options)) {
 				pattern <- temp.method
 				temp.method.file <- dir(temp.method.path, pattern='\\.rds', full.names = TRUE)
 			} else {
-                if(pred.train) temp.files <- dir(temp.formula.path, pattern='^predtrain(.*)\\.rds', full.names = TRUE) else temp.files <- dir()[grepl("^((?<!predtrain.)*\\.rds", dir(), perl=TRUE)]
-				pattern <- paste0("formula", j, "_", intervals[[p]])
+				print(pred.train)
+                if(pred.train) temp.files <- dir(temp.formula.path, pattern='^predtrain(.*)\\.rds', full.names = TRUE) else temp.files <- dir(temp.formula.path, full.names=TRUE)[grepl("^((?<!predtrain).)*\\.rds", dir(temp.formula.path, full.names=TRUE), perl=TRUE)]
+                if(temp.formula.i == "NONE") pattern <- paste0("formula", j, "_", intervals[[p]]) else pattern <- paste0("formula", temp.formula.i, "_", intervals[[p]])
+                print(temp.files)
+				print(pattern)
 				temp.method.file <- temp.files[grepl(pattern, temp.files)]
 			}
+			if(temp.formula.i != "NONE") j <- temp.formula.i
 			print(temp.method.file)
 			pred.temp <- readRDS(temp.method.file)
 			temp.train.len <- attr(pred.temp, "train.len")
@@ -327,8 +340,8 @@ for(i in 1:length(temp.method.options)) {
 			date.period <- paste0(as.character(as.Date(test.start.dt)), "-", as.character(as.Date(test.stop.dt)))
 			print(date.period)
 			if(grepl("(GAM|LM)", curr.temp.method.option)) {
-				all.weekly.fits.fn <- extensionJoin(paste("weekly", "load-fit-series", load.method, date.period, "all", "?", "temp-model", ptemp.method, paste0("formula", j), intervals[[p]], sep="_"), "rds")
-				all.monthly.fits.fn <- extensionJoin(paste("monthly", "load-fit-series", load.method, date.period, "all", "?", "temp-model", ptemp.method, paste0("formula", j), intervals[[p]], sep="_"), "rds")
+				all.weekly.fits.fn <- extensionJoin(paste("weekly", "load-fit-series", load.method, date.period, "all", "?", "temp-model", ptemp.method.option, paste0("formula", j), intervals[[p]], sep="_"), "rds")
+				all.monthly.fits.fn <- extensionJoin(paste("monthly", "load-fit-series", load.method, date.period, "all", "?", "temp-model", ptemp.method.option, paste0("formula", j), intervals[[p]], sep="_"), "rds")
 			} else if(no.temp.formula) {
 				all.weekly.fits.fn <- extensionJoin(paste("weekly", "load-fit-series", load.method, date.period, "all", "?", "temp-model", ptemp.method, sep="_"), "rds")
 				all.monthly.fits.fn <- extensionJoin(paste("monthly", "load-fit-series", load.method, date.period, "all", "?", "temp-model", ptemp.method, sep="_"), "rds")
@@ -360,17 +373,12 @@ for(i in 1:length(temp.method.options)) {
 					#** GET FEATURES FOR CURRENT TRAIN AND TEST PERIODS **#
 					# - lag for training changes
 					load.train.features <- assembleLoadFeatures(load.features, temp, load.train.dt, lag, load.train.month.len, 2)
+                    print(head(load.train.features))
 					# - htype for test horizon changes
 					load.test.features <- assembleLoadFeatures(load.features, temp, test.dt, lag, test.horizon, htype)
+                    print(head(load.test.features))
+                    print(nrow(load.test.features))
 
-					train.features.fn <- extensionJoin(paste("train-load-features", paste0("start", as.character(as.Date(load.train.dt))), "instance", ml, pred.type, sep="_"), "rds")
-					train.features.path <- pathJoin(load.features.path, train.features.fn)
-					saveRDS(load.train.features, file=train.features.path, compress = TRUE)
-
-					test.features.fn <- extensionJoin(paste("test-load-features", paste0("start", as.character(as.Date(test.dt))), "instance", ml, pred.type, sep="_"), "rds")
-					test.features.path <- pathJoin(load.features.path, test.features.fn)
-					saveRDS(load.test.features, file=test.features.path, compress = TRUE)
-					
 					#** CREATE & SAVE LOAD MODEL **#
 					if(load.method == "LM") {
 						train.result <- trainLoadModelFormulaLM(load.train.features[,-1], load.method.formula, load.train.dt)
@@ -384,7 +392,7 @@ for(i in 1:length(temp.method.options)) {
 					load.model <- train.result[["model"]]  
 					if(h==1) {
 						if(grepl("(GAM|LM)", curr.temp.method.option)) {
-							load.model.fn <- extensionJoin(paste("monthly", "model", load.method, "?", ptemp.method, paste0("formula", j), intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
+							load.model.fn <- extensionJoin(paste("monthly", "model", load.method, "?", ptemp.method.option, paste0("formula", j), intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
 						} else if(no.temp.formula) {
 							load.model.fn <- extensionJoin(paste("monthly", "model", load.method, "?", ptemp.method, intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
 						} else {
@@ -392,7 +400,7 @@ for(i in 1:length(temp.method.options)) {
 						}
 					} else {
 						if(grepl("(GAM|LM)", curr.temp.method.option)) {
-							load.model.fn <- extensionJoin(paste("weekly", "model", load.method, "?", ptemp.method, paste0("formula", j), intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
+							load.model.fn <- extensionJoin(paste("weekly", "model", load.method, "?", ptemp.method.option, paste0("formula", j), intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
 						} else if(no.temp.formula) {
 							load.model.fn <- extensionJoin(paste("weekly", "model", load.method, "?", ptemp.method, intervals[[p]], pred.type, "instance", ml, sep="_"), "txt")
 						} else {
@@ -420,8 +428,21 @@ for(i in 1:length(temp.method.options)) {
 					train.residuals <- train.result[["residuals"]]
 					test.quantiles <- createPredQuantiles(load.fit, train.residuals)
 
+                    load.train.features <- cbind(load.train.features, RES=train.residuals)
+
+					train.features.fn <- extensionJoin(paste("train-load-features", paste0("start", as.character(as.Date(load.train.dt))), "instance", ml, pred.type, sep="_"), "rds")
+					train.features.path <- pathJoin(load.features.path, train.features.fn)
+					#saveRDS(load.train.features, file=train.features.path, compress = TRUE)
+
+                    load.test.features <- cbind(load.test.features, FIT=load.fit)
+
+					test.features.fn <- extensionJoin(paste("test-load-features", paste0("start", as.character(as.Date(test.dt))), "instance", ml, pred.type, sep="_"), "rds")
+					test.features.path <- pathJoin(load.features.path, test.features.fn)
+					#saveRDS(load.test.features, file=test.features.path, compress = TRUE)
+					
+
 					if(grepl("(GAM|LM)", curr.temp.method.option)) {
-						monthly.res.fn <- extensionJoin(paste("monthly", "load-fit-series", load.method, as.Date(test.dt), "?", "temp-model", ptemp.method, paste0("formula", j), intervals[[p]], "instance", ml, sep="_"), "rds")
+						monthly.res.fn <- extensionJoin(paste("monthly", "load-fit-series", load.method, as.Date(test.dt), "?", "temp-model", ptemp.method.option, paste0("formula", j), intervals[[p]], "instance", ml, sep="_"), "rds")
 					} else if(no.temp.formula) {
 						monthly.res.fn <- extensionJoin(paste("monthly", "load-fit-series", load.method, as.Date(test.dt), "?", "temp-model", ptemp.method, "instance", ml, sep="_"), "rds")
 					} else {
@@ -565,8 +586,9 @@ for(i in 1:length(temp.method.options)) {
 				row.names(score.board[[h]]) <- c(c(1:test.month.len), "CV MEAN")
 			}
 
-			position.board <- cbind(MAPE=res[[1]]$MAPE, PINBALL=res[[1]]$PINBALL, POSITION=POSITIONS, PINBALL_FIRSTPOS=firstpos_benchmark[1:test.month.len, ])
+			position.board <- cbind(MAPE=res[[1]]$MAPE, PINBALL=res[[1]]$PINBALL, POSITION=POSITIONS, PINBALL_=firstpos_benchmark[1:test.month.len, ])
 			dates <- res[[1]][1:(nrow(res[[1]])), c(1,2)]
+            dates <- cbind(dates, MONTH=format(as.POSIXct(dates[1:(nrow(res[[1]])), 2], tz="EST"), "%b %y"))
 			position.board <- cbind(dates, position.board)
 			row.names(position.board) <- c(1:test.month.len)#, "MODEL CV MEAN")
 
@@ -576,19 +598,19 @@ for(i in 1:length(temp.method.options)) {
 				    appendTableToFile(score.board[[h]], monthly.scores.path)
 				    cat("\n", file = monthly.scores.path, append = TRUE)
 					if(grepl("(GAM|LM)", curr.temp.method.option)) {
-						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", "1m", load.method, date.period, "all", "?", "temp-model", ptemp.method, paste0("formula", j), intervals[[p]], sep="_"), "rds")
+						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", "1m", load.method, date.period, "all", "?", "temp-model", ptemp.method.option, paste0("formula", j), intervals[[p]], sep="_"), "rds")
 					} else if(no.temp.formula) {
 						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", "1m", load.method, date.period, "all", "?", "temp-model", ptemp.method, sep="_"), "rds")
 					} else {
 						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", "1m", load.method, date.period, "all", "?", "temp-model", ptemp.method, curr.temp.method.option, paste0("formula", j), intervals[[p]], sep="_"), "rds")
 					}					
-					col <- position.board[1:test.month.len, 1:6]
+					col <- position.board[1:test.month.len, 1:7]
 					comp <- col
 				} else if (h==2) {
 				    appendTableToFile(score.board[[h]], weekly.scores.path)
 				    cat("\n", file = weekly.scores.path, append = TRUE)
 					if(grepl("(GAM|LM)", curr.temp.method.option)) {
-						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", "5wrest", load.method, date.period, "all", "?", "temp-model", ptemp.method, paste0("formula", j), intervals[[p]], sep="_"), "rds")
+						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", "5wrest", load.method, date.period, "all", "?", "temp-model", ptemp.method.option, paste0("formula", j), intervals[[p]], sep="_"), "rds")
 					} else if(no.temp.formula) {
 						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", "5wrest", load.method, date.period, "all", "?", "temp-model", ptemp.method, sep="_"), "rds")
 					} else {
@@ -601,7 +623,7 @@ for(i in 1:length(temp.method.options)) {
 					htype = var.set[1]
 					test.horizon = var.set[2]
 					if(grepl("(GAM|LM)", curr.temp.method.option)) {
-						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", getPredictionType(htype, test.horizon), load.method, date.period, "all", "?", "temp-model", ptemp.method, paste0("formula", j), intervals[[p]], sep="_"), "rds")
+						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", getPredictionType(htype, test.horizon), load.method, date.period, "all", "?", "temp-model", ptemp.method.option, paste0("formula", j), intervals[[p]], sep="_"), "rds")
 					} else if(no.temp.formula) {
 						scores.fn <- extensionJoin(paste("weekly", "load-fit-scores", getPredictionType(htype, test.horizon), load.method, date.period, "all", "?", "temp-model", ptemp.method, sep="_"), "rds")
 					} else {
@@ -623,12 +645,22 @@ for(i in 1:length(temp.method.options)) {
 				### SAVE SCORES TO RDS FILES ###
 				saveRDS(score.board[[h]], file=paste(load.temp.scores.path, scores.fn, sep="/"), compress=TRUE)
 			}
+
+			if(grepl("(GAM|LM)", curr.temp.method.option)) {
+				pos.board.fn <- extensionJoin(paste("position_board", load.method, "?", ptemp.method.option, paste0("formula", j), intervals[[p]], sep="_"), "rds")
+			} else if(no.temp.formula) {
+				pos.board.fn <- extensionJoin(paste("position_board", load.method, "?", ptemp.method, sep="_"), "rds")
+			} else {
+				pos.board.fn <- extensionJoin(paste("position_board", load.method, "?", ptemp.method, curr.temp.method.option, paste0("formula", j), intervals[[p]], sep="_"), "rds")
+			}
+			saveRDS(position.board, file=pathJoin(load.temp.scores.path, pos.board.fn), compress=TRUE)
 			appendTableToFile(position.board, weekly.scores.path)
 			cat("\n", file = weekly.scores.path, append = TRUE)
 			appendTableToFile(position.board, monthly.scores.path)
 			cat("\n", file = monthly.scores.path, append = TRUE)
-			
-			colnames(comp) <- c("TRAIN.TMS", "TEST.TMS", "MAPE_1m", "PINBALL_1m", "POS_1m", "PINBALL_#1", "MAPE_1w", "PINBALL_1w", "MAPE_2w", "PINBALL_2w", "MAPE_3w", "PINBALL_3w", "MAPE_4w", "PINBALL_4w")
+			ncoln <- c("TRAIN.TMS", "TEST.TMS", "MONTH", "MAPE_1m", "PINBALL_1m", "POS_1m", "PINBALL_#1", "MAPE_1w", "PINBALL_1w", "MAPE_2w", "PINBALL_2w", "MAPE_3w", "PINBALL_3w", "MAPE_4w", "PINBALL_4w")
+            print(length(ncoln))  
+			colnames(comp) <- ncoln
 			#comp <- data.frame(TRAIN.TMS=comp[,1], TEST.TMS=comp[,2], PINBALL_1m=as.numeric(comp[,3]), POS_1m=as.numeric(comp[,4]), PINBALL_1w=as.numeric(comp[,5]), PINBALL_2w=as.numeric(comp[,6]), PINBALL_3w=as.numeric(comp[,7]), PINBALL_4w=as.numeric(comp[,8]))
 			#comp <- data.frame(TRAIN.TMS=comp[,1], TEST.TMS=comp[,2], MAPE_1m=comp[,3], PINBALL_1m=comp[,4], POS_1m=comp[,5], PINBALL_FIRSTPOS=comp[,6], PINBALL_1w=comp[,7], PINBALL_2w=comp[,8], PINBALL_3w=comp[,9], PINBALL_4w=comp[,10])
 			#comp[,3:8] <- sapply(comp[, 3:8], as.numeric)
@@ -645,9 +677,9 @@ for(i in 1:length(temp.method.options)) {
 				combined.pos <- c(combined.pos, calcPosition(leaderboard, h, score))
 			}
 			comparison.board <- cbind(comp[, 1:6], PINBALL_wAVG=combined.score, POS_wAVG=combined.pos, comp[, 7:ncol(comp)])
-			means.row <- colMeans(comparison.board[, 3:ncol(comparison.board), drop=FALSE], na.rm=TRUE)
-			comparison.means.row <- cbind(TRAIN.TMS=as.character(load.train.start.dt), TEST.TMS=as.character(last.test.dt), t(data.frame(means.row)))
-			colnames(comparison.means.row) <- c("TRAIN.TMS", "TEST.TMS", "MAPE_1m", "PINBALL_1m", "POS_1m", "PINBALL_#1", "MAPE_1w", "PINBALL_1w", "MAPE_2w", "PINBALL_2w", "MAPE_3w", "PINBALL_3w", "MAPE_4w", "PINBALL_4w", "PINBALL_wAVG", "POS_wAVG")
+			means.row <- colMeans(comparison.board[, 4:ncol(comparison.board), drop=FALSE], na.rm=TRUE)
+			comparison.means.row <- cbind(TRAIN.TMS=as.character(load.train.start.dt), TEST.TMS=as.character(last.test.dt), MONTH="-", t(data.frame(means.row)))
+			colnames(comparison.means.row) <- c("TRAIN.TMS", "TEST.TMS", "MONTH", "MAPE_1m", "PINBALL_1m", "POS_1m", "PINBALL_wAVG", "POS_wAVG", "PINBALL_#1", "MAPE_1w", "PINBALL_1w", "MAPE_2w", "PINBALL_2w", "MAPE_3w", "PINBALL_3w", "MAPE_4w", "PINBALL_4w")
 			comparison.board <- rbind(comparison.board, comparison.means.row)
 			row.names(comparison.board) <- c(c(1:test.month.len), "CV MEAN")
 			print(head(comparison.board))

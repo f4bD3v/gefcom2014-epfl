@@ -109,7 +109,9 @@ getLoadFeatures <- function(load.features, start.dt, lag.horizon, horizon, htype
   time.of.year <- load.features$TOY[index.seq.target] 
   daytype <- load.features$DAYT[index.seq.target] 
   simple.daytype <- load.features$SDAYT[index.seq.target] 
+  print(head(simple.daytype))
   weekday.daytype <- load.features$WDAYT[index.seq.target] 
+  print(head(weekday.daytype))
   hour <- load.features$HOUR[index.seq.target]
   month <- load.features$MONTH[index.seq.target]
 
