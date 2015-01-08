@@ -69,9 +69,9 @@ temp.method.option <- "NONE"
 temp.method.options <- list()
 # fill through filesystem
 
-temp.formula <- "NONE"
+temp.formula.i <- "NONE"
 if(!is.null(opt$tempFormula)) {
-	temp.formula <- opt$tempFormula
+	temp.formula.i <- opt$tempFormula
 }
 temp.gamma <- FALSE
 if(!is.null(opt$tempGamma)) {
@@ -231,7 +231,7 @@ if(temp.ntrees != -1 || temp.hidden.units != -1) {
     temp.method.options <- list(temp.method.option)
     print(temp.method.options)
     # only keep path of temp.method.option
-    temp.method.options.paths <- temp.method.options.paths[grepl(temp.method.option, temp.method.options.paths)]
+    temp.method.options.paths <- temp.method.options.paths[grepl(temp.method.option, unlist(temp.method.options.paths))]
     print(temp.method.options.paths)
 }
 
@@ -253,18 +253,21 @@ for(i in 1:length(temp.method.options)) {
 	temp.formulas <- temp.method.formulas[[curr.temp.method.option]]
 	temp.formula.paths <- temp.method.formulas.paths[[curr.temp.method.option]]
     print(temp.formulas)
-    if(temp.formula != "NONE") {
+    if(temp.formula.i != "NONE") {
         # use temp.formula as index --> formulas are sorted
-        temp.formulas <- list(temp.formulas[[temp.formula]])
-        dirn <- paste("formula", temp.formula, sep="_")
+        temp.formulas <- list(temp.formulas[[temp.formula.i]])
+        dirn <- paste("formula", temp.formula.i, sep="_")
         logv <- grepl(dirn, unlist(temp.formula.paths), perl=TRUE)
         print(logv)
         temp.formula.paths <- temp.formula.paths[logv]
         print(temp.formula.paths)
+        print("succes")
     }
 	for(j in 1:length(temp.formulas)) {
 		temp.formula <- temp.formulas[[j]]
+		print(temp.formula)
 		temp.formula.path <- temp.formula.paths[[j]]
+		print(temp.formula.path)
 		for(p in 1:length(intervals)) {
 			print(curr.temp.method.option)
 			print(temp.formula.path)
@@ -301,10 +304,14 @@ for(i in 1:length(temp.method.options)) {
 				pattern <- temp.method
 				temp.method.file <- dir(temp.method.path, pattern='\\.rds', full.names = TRUE)
 			} else {
-                if(pred.train) temp.files <- dir(temp.formula.path, pattern='^predtrain(.*)\\.rds', full.names = TRUE) else temp.files <- dir()[grepl("^((?<!predtrain.)*\\.rds", dir(), perl=TRUE)]
-				pattern <- paste0("formula", j, "_", intervals[[p]])
+				print(pred.train)
+                if(pred.train) temp.files <- dir(temp.formula.path, pattern='^predtrain(.*)\\.rds', full.names = TRUE) else temp.files <- dir(temp.formula.path, full.names=TRUE)[grepl("^((?<!predtrain).)*\\.rds", dir(temp.formula.path, full.names=TRUE), perl=TRUE)]
+                if(temp.formula.i == "NONE") pattern <- paste0("formula", j, "_", intervals[[p]]) else pattern <- paste0("formula", temp.formula.i, "_", intervals[[p]])
+                print(temp.files)
+				print(pattern)
 				temp.method.file <- temp.files[grepl(pattern, temp.files)]
 			}
+			if(temp.formula.i != "NONE") j <- temp.formula.i
 			print(temp.method.file)
 			pred.temp <- readRDS(temp.method.file)
 			temp.train.len <- attr(pred.temp, "train.len")
