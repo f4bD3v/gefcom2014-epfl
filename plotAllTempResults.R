@@ -1,5 +1,5 @@
-source("~/gefcom2014-epfl/util/plot_helpers.R")
-source("~/gefcom2014-epfl/config.R")
+source("~/github_repos/gefcom2014-epfl/util/plot_helpers.R")
+source("~/github_repos/gefcom2014-epfl/config.R")
 require("lubridate")
 # load all .rds files in directory
 
@@ -20,7 +20,7 @@ plotRDS <- function(df, htype, horizon) {
 	# - chunks
 	# - xlabel, ylabel, title
 	# xlabel = paste(start.date, "-", end.date, sep=" ")
-	plotPredictionResiduals(tms, target, fit, residuals, chunks, "Time in Hours", "Temperature in Fahrenheit", "Temperature Prediction", c(0, 120))
+	plotPredictionResiduals(tms, target, fit, residuals, chunks, "Time in Hours", "Hourly Temperature in Fahrenheit", "Temperature Prediction", c(0, 120))
 }
 
 
@@ -64,7 +64,7 @@ plotProcessing <- function(dir.path, files) {
 
 		if(grepl('all', rds.file)) {
 			#fn.pdf <- paste0(paste(part1, part2, paste("all-plots", part3, start.date, end.date, sep="_"), sep="/"), ".pdf")
-			fn.pdf <- paste0(paste("all-plots", filename, sep="_"), ".pdf")
+			fn.pdf <- paste0("./plots/", paste("all-plots", filename, sep="_"), ".pdf")
 			print(fn.pdf)
 			pdf(file=fn.pdf, width=8, height=11)
 			par(mfrow=c(3,4))
@@ -77,7 +77,7 @@ plotProcessing <- function(dir.path, files) {
 
 		} else {
 			#fn.pdf <- paste0(paste(part1, part2, paste("plot", part3, start.date, end.date, sep="_"), sep="/"), ".pdf")
-			fn.pdf <- paste0(paste("plot", filename, sep="_"), ".pdf")
+			fn.pdf <- paste0("./plots/", paste("plot", filename, sep="_"), ".pdf")
 			pdf(file=fn.pdf, width=8, height=11)
 			par(mfrow=c(2,2))
 
@@ -92,6 +92,7 @@ plotProcessing <- function(dir.path, files) {
 plotFromFormulaPath <- function(form.dir, method, option="NONE") {
 	parts <- strsplit(form.dir, "/")[[1]]
 	formula <- parts[[length(parts)]]
+    dir.create(paste0(form.dir, "/plots"), showWarnings = TRUE, recursive = FALSE)
 	files <- dir(form.dir, pattern = '\\.rds', full.names = FALSE)
 	files <- files[order(nchar(files), files)]
 	plotProcessing(form.dir, files)
@@ -109,6 +110,9 @@ for(meth.dir in dirs) {
 	parts <- strsplit(meth.dir, "/")[[1]]
 	method <- parts[[length(parts)]]
 	opt.dirs <- list.dirs(meth.dir, full.names = TRUE, recursive=FALSE)
+    if(grepl("(TRUE|MEAN)", method)) {
+        next
+    }
 	for(opt.dir in opt.dirs) {
 		if(grepl('formula', opt.dir)) {
 			print(opt.dir)
@@ -117,11 +121,13 @@ for(meth.dir in dirs) {
 		#option
 			parts <- strsplit(opt.dir, "/")[[1]]
 			option <- parts[[length(parts)]]
-			form.dir <- list.dirs(opt.dir, full.names = TRUE, recursive=FALSE)
-			if(grepl('formula', form.dir)) {
-				print(form.dir)
-				plotFromFormulaPath(form.dir, method, option)
-			}
+			form.dirs <- list.dirs(opt.dir, full.names = TRUE, recursive=FALSE)
+            print(form.dirs)
+            for(form.dir in form.dirs) {
+                if(grepl('formula', form.dir)) {
+                    plotFromFormulaPath(form.dir, method, option)
+                }
+            }
 		}
 	}
 }

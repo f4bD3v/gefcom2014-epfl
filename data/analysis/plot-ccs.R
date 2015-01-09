@@ -13,10 +13,10 @@ fn.pdf <- 'weather-station-cc-plots.pdf'
 pdf(file=fn.pdf, width=8, height=11)
 #par(mfrow=c(1,1))
 #ccf(w.station.1, w.station.1)
-par(mfrow=c(4,2), mai=c(0.65,0.65,0.65,0.65))
+par(mfrow=c(5,2), mai=c(0.65,0.65,0.65,0.65))
 for(i in 1:ncol(w.stations)) {
   title <- paste("CC for Temperature Series\n of Weather Stations 1 and", i)
-  ccf(w.station.1, w.stations[, i], lag.max=35*24, main=title)
+  ccf(w.station.1, w.stations[, i], lag.max=35*24, type="covariance", main=title)
 }
 dev.off()
 

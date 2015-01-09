@@ -1,15 +1,31 @@
-@article{Hyndman2010,
-author = {Hyndman, Rob J. and Fan, Shu},
-doi = {10.1109/TPWRS.2009.2036017},
-file = {:Users/fab/Dropbox/UNI/MSc/HS14/SP/papers/Density\_Forecasting\_Long-Term\_Peak\_Demand.pdf:pdf},
-issn = {0885-8950},
-journal = {IEEE Transactions on Power Systems},
-month = may,
-number = {2},
-pages = {1142--1153},
-title = {{Density Forecasting for Long-Term Peak Electricity Demand}},
-url = {http://ieeexplore.ieee.org/lpdocs/epic03/wrapper.htm?arnumber=5345698},
-volume = {25},
+@article{Boukouvalas2012,
+author = {Boukouvalas, Alexis and Cornford, Dan},
+file = {:Users/fab/Dropbox/UNI/MSc/HS14/SP/papers/quantile\_regression/Gaussian\_Process\_Quantile\_Regression.pdf:pdf},
+journal = {No idea yet},
+title = {{Direct Gaussian Process Quantile Regression using Expectation Propagation}},
+year = {2012}
+}
+@article{Gneiting2014,
+author = {Gneiting, Tilmann and Katzfuss, Matthias},
+doi = {10.1146/annurev-statistics-062713-085831},
+file = {:Users/fab/Dropbox/UNI/MSc/HS14/SP/papers/Probabilistic\_Forecasting.pdf:pdf},
+issn = {2326-8298},
+journal = {Annual Review of Statistics and Its Application},
+keywords = {calibration,consistent scoring function,distributional regression,ensemble forecast,proper scoring,rule},
+month = jan,
+number = {1},
+pages = {125--151},
+title = {{Probabilistic Forecasting}},
+url = {http://www.annualreviews.org/doi/abs/10.1146/annurev-statistics-062713-085831},
+volume = {1},
+year = {2014}
+}
+@article{Hong2010,
+author = {Hong, Tao and Gui, Min and Baran, Mesut E and Member, Senior and Willis, H Lee},
+file = {:Users/fab/Dropbox/uni/msc/HS14/SP/papers/ModelingAndForecastingHourlyLoad\_Hong2010.pdf:pdf},
+isbn = {9781424465514},
+pages = {4},
+title = {{Modeling and Forecasting Hourly Electric Load by Multiple Linear Regression with Interactions}},
 year = {2010}
 }
 @article{Hong2014Gefcom2012,
@@ -27,30 +43,6 @@ url = {http://linkinghub.elsevier.com/retrieve/pii/S0169207013000745},
 volume = {30},
 year = {2014}
 }
-@article{Gneiting2014,
-author = {Gneiting, Tilmann and Katzfuss, Matthias},
-doi = {10.1146/annurev-statistics-062713-085831},
-file = {:Users/fab/Dropbox/UNI/MSc/HS14/SP/papers/Probabilistic\_Forecasting.pdf:pdf},
-issn = {2326-8298},
-journal = {Annual Review of Statistics and Its Application},
-keywords = {calibration,consistent scoring function,distributional regression,ensemble forecast,proper scoring,rule},
-month = jan,
-number = {1},
-pages = {125--151},
-title = {{Probabilistic Forecasting}},
-url = {http://www.annualreviews.org/doi/abs/10.1146/annurev-statistics-062713-085831},
-volume = {1},
-year = {2014}
-}
-@article{Fan2010,
-author = {Fan, Shu and Member, Senior and Hyndman, Rob J},
-file = {:Users/fab/Dropbox/UNI/MSc/HS14/SP/papers/Short\_Term\_Electric\_Load\_Forecasting.pdf:pdf},
-journal = {IEEE Transactions on Power Systems},
-number = {August},
-pages = {1--8},
-title = {{Short-term load forecasting based on a semi-parametric additive model}},
-year = {2010}
-}
 @article{Hong2014Normalization,
 author = {Hong, Tao and Wilson, Jason and Xie, Jingrui and Member, Associate},
 file = {:Users/fab/Dropbox/UNI/MSc/HS14/SP/papers/Long-Term\_Probabilistic\_Load\_Forecasting.pdf:pdf},
@@ -61,12 +53,34 @@ title = {{Long Term Probabilistic Load Forecasting and Normalization With Hourly
 volume = {5},
 year = {2014}
 }
-@article{Boukouvalas2012,
-author = {Boukouvalas, Alexis and Cornford, Dan},
-file = {:Users/fab/Dropbox/UNI/MSc/HS14/SP/papers/quantile\_regression/Gaussian\_Process\_Quantile\_Regression.pdf:pdf},
-journal = {No idea yet},
-title = {{Direct Gaussian Process Quantile Regression using Expectation Propagation}},
-year = {2012}
+@article{Hyndman2010,
+author = {Hyndman, Rob J. and Fan, Shu},
+doi = {10.1109/TPWRS.2009.2036017},
+file = {:Users/fab/Dropbox/UNI/MSc/HS14/SP/papers/Density\_Forecasting\_Long-Term\_Peak\_Demand.pdf:pdf},
+issn = {0885-8950},
+journal = {IEEE Transactions on Power SystemsHyndman, R. J., \& Fan, S. (2010). Density Forecasting for Long-Term Peak Electricity Demand. IEEE Transactions on Power Systems, 25(2), 1142–1153. doi:10.1109/TPWRS.2009.2036017},
+month = may,
+number = {2},
+pages = {1142--1153},
+title = {{Density Forecasting for Long-Term Peak Electricity Demand}},
+url = {http://ieeexplore.ieee.org/lpdocs/epic03/wrapper.htm?arnumber=5345698},
+volume = {25},
+year = {2010}
+}
+@article{Nedellec2014,
+author = {Nedellec, Raphael and Cugliari, Jairo and Goude, Yannig},
+doi = {10.1016/j.ijforecast.2013.07.004},
+file = {:Users/fab/Dropbox/uni/msc/HS14/SP/GEFCOM2012\_GeneralizedAdditiveModel.pdf:pdf},
+issn = {01692070},
+journal = {International Journal of Forecasting},
+month = apr,
+number = {2},
+pages = {375--381},
+publisher = {Elsevier B.V.},
+title = {{GEFCom2012: Electric load forecasting and backcasting with semi-parametric models}},
+url = {http://linkinghub.elsevier.com/retrieve/pii/S0169207013000800},
+volume = {30},
+year = {2014}
 }
 @article{Takeuchi2005,
 author = {Takeuchi, Ichiro and Le, Quoc V. and Sears, Timothy D. and Smola, Alexander J.},
@@ -74,4 +88,89 @@ file = {:Users/fab/Dropbox/UNI/MSc/HS14/SP/papers/quantile\_regression/TakLeSeaS
 journal = {Journal of Machine Learning Research Nonparamteric Quantile Estimation},
 title = {{Nonparametric Quantile Estimation}},
 year = {2005}
+}
+@article{FanHyndman2012,
+author = {Fan, Shu and Member, Senior and Hyndman, Rob J},
+file = {:Users/fab/Dropbox/uni/msc/HS14/SP/papers/Short\_Term\_Electric\_Load\_Forecasting.pdf:pdf},
+journal = {IEEE Transactions on Power Systems},
+number = {1},
+pages = {134--141},
+title = {{Short-Term Load Forecasting Based on a Semi-Parametric Additive Model}},
+volume = {27},
+year = {2012}
+}
+@article{Goude2014,
+author = {Goude, Yannig and Nedellec, Raphael and Kong, Nicolas},
+doi = {10.1109/TSG.2013.2278425},
+file = {:Users/fab/Dropbox/uni/msc/HS14/SP/papers/LocalAndShortMiddleTermForecasting.pdf:pdf},
+issn = {1949-3053},
+journal = {IEEE Transactions on Smart Grid},
+month = jan,
+number = {1},
+pages = {440--446},
+title = {{Local Short and Middle Term Electricity Load Forecasting With Semi-Parametric Additive Models}},
+url = {http://ieeexplore.ieee.org/lpdocs/epic03/wrapper.htm?arnumber=6684602},
+volume = {5},
+year = {2014}
+}
+@unpublished{GAMS,
+author = {Clark, Michael},
+file = {:Users/fab/Dropbox/uni/msc/HS14/SP/papers/gam/GAMS.pdf:pdf},
+institution = {University of Notre Dame},
+keywords = {R,analysis,generalized addtive models,generalized linear models,graphics,loess,nonlinear,polynomial,regression,regularization,statistics,visualization},
+title = {{ADDITIVE MODELS}},
+url = {http://www3.nd.edu/~mclark19/learn/GAMS.pdf}
+}
+@article{Liaw2002,
+author = {Liaw, A and Wiener, M},
+journal = {R News: The Newsletter of the R Project},
+keywords = {imported},
+number = {3},
+pages = {18--22},
+title = {{Classification and Regression by randomForest.}},
+url = {http://cran.r-project.org/doc/Rnews/},
+volume = {2},
+year = {2002}
+}
+@book{hastie01statisticallearning,
+address = {New York, NY, USA},
+author = {Hastie, Trevor and Tibshirani, Robert and Friedman, Jerome},
+keywords = {ml statistics},
+publisher = {Springer New York Inc.},
+series = {Springer Series in Statistics},
+title = {{The Elements of Statistical Learning}},
+year = {2001}
+}
+@book{BreimanRF,
+author = {Breiman, Leo},
+file = {:Users/fab/Dropbox/uni/msc/HS14/SP/papers/Breimann\_RandomForest.pdf:pdf},
+keywords = {classification,ensemble,regression},
+pages = {5--32},
+title = {{Random Forests}},
+year = {2001}
+}
+@book{Venables2002,
+address = {New York},
+annote = {ISBN 0-387-95457-0},
+author = {Venables, W N and Ripley, B D},
+edition = {Fourth},
+publisher = {Springer},
+title = {{Modern Applied Statistics with S}},
+url = {http://www.stats.ox.ac.uk/pub/MASS4},
+year = {2002}
+}
+@book{Wood2006,
+author = {Wood, S N},
+publisher = {Chapman and Hall/CRC},
+title = {{Generalized Additive Models: An Introduction with R}},
+year = {2006}
+}
+@article{Wood2003,
+author = {Wood, S N},
+journal = {Journal of the Royal Statistical Society (B)},
+number = {1},
+pages = {95--114},
+title = {{Thin-plate regression splines}},
+volume = {65},
+year = {2003}
 }

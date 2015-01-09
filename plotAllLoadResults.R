@@ -1,5 +1,5 @@
-source("~/gefcom2014-epfl/util/plot_helpers.R")
-source("~/gefcom2014-epfl/config.R")
+source("~/github_repos/gefcom2014-epfl/util/plot_helpers.R")
+source("~/github_repos/gefcom2014-epfl/config.R")
 require("lubridate")
 require("MASS")
 # load all .rds files in directory
@@ -24,6 +24,10 @@ plotRDS <- function(df, htype, horizon) {
 }
 
 plotProcessing <- function(dir.path, files) {
+    plots.path <- gsub('fits', 'plots', dir.path)
+    dir.create(plots.path, showWarnings = TRUE, recursive = FALSE)
+    print(plots.path)
+
 	print(dir.path)
 	setwd(dir.path)
 	#print(getwd())
@@ -56,6 +60,9 @@ plotProcessing <- function(dir.path, files) {
 		#part1 <- parts[1]
 		#part2 <- parts[2]
 		#part3 <- parts[3]
+		parts <- strsplit(plots.path, "\\/")[[1]]
+        path.prefix <- paste(parts[c((length(parts)-1):length(parts))], collapse="/")
+        print(path.prefix)
 
 		#prefix <- substring(rds.file, 3, nchar(rds.file))
 		parts <- strsplit(rds.file, "\\.")[[1]]
@@ -63,7 +70,7 @@ plotProcessing <- function(dir.path, files) {
 
 		if(grepl('all', rds.file)) {
 			#fn.pdf <- paste0(paste(part1, part2, paste("all-plots", part3, start.date, end.date, sep="_"), sep="/"), ".pdf")
-			fn.pdf <- paste0(paste("all-plots", filename, sep="_"), ".pdf")
+			fn.pdf <- paste0("../../", path.prefix, "/", paste("all-plots", filename, sep="_"), ".pdf")
 			print(fn.pdf)
 			pdf(file=fn.pdf, width=8, height=11)
 			par(mfrow=c(3,4))
@@ -76,7 +83,8 @@ plotProcessing <- function(dir.path, files) {
 
 		} else {
 			#fn.pdf <- paste0(paste(part1, part2, paste("plot", part3, start.date, end.date, sep="_"), sep="/"), ".pdf")
-			fn.pdf <- paste0(paste("plot", filename, sep="_"), ".pdf")
+			fn.pdf <- paste0("../../", path.prefix, "/", paste("plot", filename, sep="_"), ".pdf")
+            print(fn.pdf)
 			pdf(file=fn.pdf, width=8, height=11)
 			par(mfrow=c(2,2))
 
@@ -92,6 +100,8 @@ plotFromFormulaPath <- function(form.dir, method, option="NONE") {
 	parts <- strsplit(form.dir, "/")[[1]]
 	formula <- parts[[length(parts)]]
 	fits.path <- paste(form.dir, "fits", sep="/")
+	plots.path <- paste(form.dir, "plots", sep="/")
+    dir.create(plots.path, showWarnings = TRUE, recursive = FALSE)
 	temp.dirs <- list.dirs(fits.path, full.names = TRUE, recursive=FALSE)
 	for(temp.dir in temp.dirs) {
 		files <- dir(temp.dir, pattern = '\\.rds', full.names = FALSE)
