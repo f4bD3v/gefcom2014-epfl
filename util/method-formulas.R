@@ -1,7 +1,9 @@
 ### TEMPERATURE formulas ###
 
 LM.temp.formulas <- list("DLAG + WLAG52 + TOY + HOUR",
-                       "WLAG52 + TOY + HOUR")
+                       "WLAG52 + TOY + HOUR",
+                       "DLAG + WLAG52 + HOUR",
+                       "DLAG + WLAG52 + HOUR")
 
 # mean - is direct average over yearly lags, no model involved
 GAM.temp.formulas <-list(#"s(LAGM)",

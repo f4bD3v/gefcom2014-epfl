@@ -127,56 +127,14 @@ if(PCA) {
 hash <- hashDtYear(temp.series$TMS)
 temp <- cbind(temp.series, HASH=hash)
 
-
-### DEFINE DATES & HORIZON ###
-
-#** TEST DATES **#
-test.month.len <- 14
-
-test.stop.dt <- last.dt 
-test.start.dt <- subMonths(addHours(test.stop.dt, 1), test.month.len)
-test.dt <- test.start.dt
-last.test.dt <- test.dt
-cat(paste0("Test Start Dt: ", test.start.dt), sep="\n")
-cat(paste0("Test Stop Dt: ", test.stop.dt), sep="\n")
-cat("\n")
-
 htype <- 2
 test.horizon <- 1
-
 pred.type <- getPredictionType(htype, test.horizon)
-#** TEMP TRAINING DATES **#
-temp.train.year.len <- 7
-
-temp.train.stop.dt <- subHour(test.start.dt)
-temp.train.start.dt <- subYears(test.start.dt, temp.train.year.len)
-
-cat(paste0("Train Start Dt: ", temp.train.start.dt), sep="\n")
-cat(paste0("Train Stop Dt: ", temp.train.stop.dt), sep="\n")
-cat("\n")
-temp.train.dt <- temp.train.start.dt
-
-temp.train.month.len <- temp.train.year.len * 12
-
-#** LOAD TRAINING SET **#
-load.train.year.len <- 4
-
-load.train.stop.dt <- temp.train.stop.dt
-load.train.start.dt <- subYears(test.start.dt, load.train.year.len)
-load.train.dt <- load.train.start.dt
-last.load.train.dt <- load.train.dt
-cat(paste0("Load Train Start Dt: ", load.train.dt), sep="\n")
-cat("\n")
-
-load.train.month.len <- load.train.year.len * 12
-################################################
-
 
 ### CREATE LOAD FOLDER STRUCTURE ###
 base.path <- createBaseFolder(out.path, test.start.dt, test.stop.dt)
 method.path <- createMethodFolder(base.path, "temp", method, method.option, formula, PCA, station) 
 print(paste0("method.path", method.path))
-
 
 if(!grepl("(MEAN|TRUE)", method)) {
 	model.instances.path <- createFolder(method.path, "temp-model-instances")
@@ -197,6 +155,8 @@ if(file.exists(curr.features.path)) {
 	temp.features <- createTempFeatures(temp, temp.train.dt, temp.train.month.len + test.month.len)
 	saveRDS(temp.features, file=curr.features.path, compress=TRUE)
 }
+print("features MTEMP NA?")
+print(any(is.na(temp.features$MTEMP)))
 
 if(method == "TRUE") {
 	print('exiting')
@@ -246,7 +206,6 @@ PINBALL <- c()
 POSITIONS <- c()
 #-------------------------------
 train.start <- temp.train.start.dt
-print(train.start)
 pred.start <- test.start.dt
 
 # if pred train len, change start dt and run len
@@ -255,9 +214,16 @@ train.len <- temp.train.month.len
 if(pred.train) {
 	pred.start <- load.train.start.dt
 	pred.run.len <- load.train.month.len + test.month.len
-	train.len <- temp.train.month.len - load.train.month.len
+	train.len <- train.len - load.train.month.len 
 }
+cat(paste0("Train Start: ", train.start), sep="\n")
+cat(paste0("Train Len: ", train.len), sep="\n")
 train.stop <- subHours(addMonths(train.start, train.len), 1)
+cat(paste0("Train Stop: ", train.stop), sep="\n")
+cat("\n")
+cat(paste0("Pred Start Dt: ", pred.start), sep="\n")
+cat(paste0("Pred Run Len: ", pred.run.len), sep="\n")
+cat("\n")
 
 #-- PRINT temp MODEL TYPE TO FILE
 method.formula <- temp.methods.formulas[[method]][[formula]]
@@ -278,8 +244,12 @@ for(j in 1:pred.run.len) {
 		# features, train.start, pred.start, lag.horizon, train.len, pred.horizon, htype)
 		print(paste0("addedmonths ", addMonths(train.start, train.len)))
 		
-		train.features <- getFeatures(temp.features, train.start, lag, train.len, htype)
+		train.features <- getFeatures(temp.features, train.start, lag, train.len, 2)
+		#print(head(train.features), 1)
+		#print(tail(train.features), 1)
 		test.features <- getFeatures(temp.features, pred.start, lag, pred.horizon, htype)
+		#print(head(test.features), 1)
+		#print(tail(test.features), 1)
 
 		train.features.fn <- paste0(paste("train-temp-features", paste0("start", as.character(as.Date(train.start))), "instance", j, pred.type, sep="_"), ".rds")
 		#saveRDS(train.features, file=pathJoin(features.path, train.features.fn), compress=TRUE)
@@ -295,6 +265,7 @@ for(j in 1:pred.run.len) {
 
 		#** CREATE & SAVE LOAD MODEL **#
 		if(method == "LM") {
+			#print(head(train.features))
 			train.result <- trainTempModelFormulaLM(train.features[,-1], method.formula, train.start)
 			temp.model <- train.result[["model"]]  
 			fit <- predict.lm(temp.model, test.features[, -(1:2)])
@@ -407,16 +378,16 @@ for(j in 1:pred.run.len) {
 
 		# FLEX HORIZON ?
 		if(h > 1 && lag != 4) {
-			# do not increment
-			if(pred.train && j >= load.train.month.len) train.start <- incrementDt(train.start, 1, htype)
+			# do not increment as long as train.len is being increased
+			train.start <- incrementDt(train.start, 1, htype)
 			pred.start <- incrementDt(pred.start, 1, htype) 
 		} else if (lag == 4) {
-			# do not increment
-			if(pred.train && j >= load.train.month.len) train.start <- incrementDt(last.train.start, 1, 2)
+			# do not increment as long as train.len is being increased
+			if(pred.train && j < load.train.month.len) train.start <- last.train.start else train.start <- incrementDt(last.train.start, 1, 2)
 			pred.start <- incrementDt(last.pred.start, 1, 2) 
 		}
 
-		if(h==1 && pred.train && j < load.train.month.len) {
+		if(lag == 4 && pred.train && j < load.train.month.len) {
 			train.len <- train.len + 1
 		}
 
@@ -425,6 +396,7 @@ for(j in 1:pred.run.len) {
 		cat("\n")
 		#******************#
 	}
+	#quit()
 }
 
 temp.res[[1]] <- monthly.temp.res
@@ -501,7 +473,7 @@ for(h in 1:pred.run.len) {
 #comparison.board <- cbind(comp, PINBALL_wAVG=combined.score)
 comparison.board <- cbind(comp[, 1:4], PINBALL_wAVG=combined.score, comp[, 5:ncol(comp)])
 means.row <- colMeans(comparison.board[, 3:ncol(comparison.board), drop=FALSE], na.rm=TRUE)
-comparison.means.row <- cbind(TRAIN.TMS=as.character(load.train.start.dt), TEST.TMS=as.character(last.test.dt), t(data.frame(means.row)))
+comparison.means.row <- cbind(TRAIN.TMS=as.character(temp.train.start.dt), TEST.TMS=as.character(last.test.dt), t(data.frame(means.row)))
 colnames(comparison.means.row) <- c("TRAIN.TMS", "TEST.TMS", "MAPE_1m", "PINBALL_1m", "PINBALL_wAVG", "MAPE_1w", "PINBALL_1w", "MAPE_2w", "PINBALL_2w", "MAPE_3w", "PINBALL_3w", "MAPE_4w", "PINBALL_4w")
 comparison.board <- rbind(comparison.board, comparison.means.row)
 row.names(comparison.board) <- c(c(1:pred.run.len), "CV MEAN")

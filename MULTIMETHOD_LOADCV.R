@@ -245,7 +245,7 @@ temp.method.formulas <- list.of.lists[[4]]
 load.method.formula <- load.methods.formulas[[load.method]][[load.formula]]
 print(temp.method.options)
 
-#test.month.len <- 1
+test.month.len <- 1
 
 for(i in 1:length(temp.method.options)) {
 	curr.temp.method.option <- temp.method.options[[i]]
@@ -367,17 +367,15 @@ for(i in 1:length(temp.method.options)) {
 					lag = var.set[2]
 
 					pred.type <- getPredictionType(htype, test.horizon)
-
-					print(tail(temp))
-					print(load.train.month.len)
 					#** GET FEATURES FOR CURRENT TRAIN AND TEST PERIODS **#
 					# - lag for training changes
 					load.train.features <- assembleLoadFeatures(load.features, temp, load.train.dt, lag, load.train.month.len, 2)
                     print(head(load.train.features))
+                    print(tail(load.train.features))
 					# - htype for test horizon changes
 					load.test.features <- assembleLoadFeatures(load.features, temp, test.dt, lag, test.horizon, htype)
                     print(head(load.test.features))
-                    print(nrow(load.test.features))
+                    print(tail(load.test.features))
 
 					#** CREATE & SAVE LOAD MODEL **#
 					if(load.method == "LM") {
@@ -523,7 +521,6 @@ for(i in 1:length(temp.method.options)) {
 						hp <- h + 1
 						if (ml == 1) res[[hp]] <- res.row else res[[hp]] <- rbind(res[[hp]], res.row)
 					}
-					print(res[[hp]])
 
 					#** UPDATE DATES **# 
 					if(h==1) {

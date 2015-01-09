@@ -48,7 +48,6 @@ getLoadTempFeatures <- function(temp.df, start.dt, horizon, htype=2) {
   cat(paste0("getting Load Temp Features: ",start.dt), sep="\n")
   cat(paste0("for htype: ", htypeToString(htype)), sep="\n")
   stop.dt <- getStopDtByHorizon(start.dt, horizon, htype)
-  print(paste0("Stop Dt ", stop.dt))
   index.seq <- getSeqByDts(temp.df$HASH, start.dt, stop.dt)
   temp.series <- temp.df$MTEMP
   CTEMP <- temp.series[index.seq] 
@@ -82,7 +81,6 @@ getLoadTempFeatures <- function(temp.df, start.dt, horizon, htype=2) {
 getLoadFeatures <- function(load.features, start.dt, lag.horizon, horizon, htype=2) {
   cat(paste0("getting Load Features: ",start.dt), sep="\n")
   stop.dt <- getStopDtByHorizon(start.dt, horizon, htype)
-  print(paste0("Stop Dt ", stop.dt))
   dt.seq.target <- seq(from=start.dt, to=stop.dt, by="hour")
   nrows <- nrow(load.features)
 
@@ -109,9 +107,7 @@ getLoadFeatures <- function(load.features, start.dt, lag.horizon, horizon, htype
   time.of.year <- load.features$TOY[index.seq.target] 
   daytype <- load.features$DAYT[index.seq.target] 
   simple.daytype <- load.features$SDAYT[index.seq.target] 
-  print(head(simple.daytype))
   weekday.daytype <- load.features$WDAYT[index.seq.target] 
-  print(head(weekday.daytype))
   hour <- load.features$HOUR[index.seq.target]
   month <- load.features$MONTH[index.seq.target]
 
@@ -238,7 +234,6 @@ predictLoad <- function(load, avg.temp, avg.temp.yearly, start.dt, horizon, use.
   if (use.temp) {
     pred.temp.df <- avg.temp
   } else {
-    print("doing this")
     pred.temp.df <- predictTemp(avg.temp, avg.temp.yearly, start.dt, 1) # should return seq temp diff + 2 month prediction 
   }
   # predict with model

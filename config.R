@@ -31,7 +31,7 @@ cat(paste0("Test Stop Dt: ", test.stop.dt), sep="\n")
 cat("\n")
 
 #** TEMP TRAINING DATES **#
-temp.train.year.len <- 7
+temp.train.year.len <- 8
 
 temp.train.stop.dt <- subHour(test.start.dt)
 temp.train.start.dt <- subYears(test.start.dt, temp.train.year.len)
@@ -39,8 +39,8 @@ temp.train.start.dt <- subYears(test.start.dt, temp.train.year.len)
 cat(paste0("Train Start Dt: ", temp.train.start.dt), sep="\n")
 cat(paste0("Train Stop Dt: ", temp.train.stop.dt), sep="\n")
 cat("\n")
-temp.train.dt <- temp.train.start.dt
 
+temp.train.dt <- temp.train.start.dt
 temp.train.month.len <- temp.train.year.len * 12
 
 #** LOAD TRAINING SET **#
