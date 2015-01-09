@@ -1,4 +1,11 @@
 
+Rscript MULTIMETHOD_LOADCV_TRAIN1.R --loadPredMethod LM --loadFormula 1 --tempPredMethod GAM --tempFormula 1
+Rscript MULTIMETHOD_LOADCV_TRAIN1.R --loadPredMethod LM --loadFormula 1 --tempPredMethod GAM --tempFormula 1 --station 1
+Rscript MULTIMETHOD_LOADCV_TRAIN1.R --loadPredMethod LM --loadFormula 1 --tempPredMethod GAM --tempFormula 1 --PCA TRUE
+
+Rscript MULTIMETHOD_LOADCV.R --loadPredMethod GAM --loadFormula 4 --tempPredMethod GAM --tempFormula 1
+Rscript MULTIMETHOD_LOADCV.R --loadPredMethod GAM --loadFormula 5 --tempPredMethod GAM --tempFormula 1
+Rscript MULTIMETHOD_LOADCV.R --loadPredMethod GAM --loadFormula 6 --tempPredMethod GAM --tempFormula 1
 
 Rscript MULTIMETHOD_LOADCV.R --loadPredMethod GAM --loadFormula 1 --tempPredMethod GAM
 Rscript MULTIMETHOD_LOADCV.R --loadPredMethod GAM --loadFormula 2 --tempPredMethod GAM

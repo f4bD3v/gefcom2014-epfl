@@ -27,7 +27,7 @@ RF.temp.formulas <- list("DLAG + WLAG52 + TOY + HOUR",
                        "WLAG52 + TOY + HOUR",
                        "DLAG + WLAG52 + HOUR")
 
-temp.methods.formulas <- list("GAM"=GAM.temp.formulas, "LM"=LM.temp.formulas, "NN"=NN.temp.formulas, "RF"=RF.temp.formulas)
+temp.methods.formulas <- list("GAM"=GAM.temp.formulas, "GAM_PCA"=GAM.temp.formulas, "GAM_Station1"=GAM.temp.formulas, "LM"=LM.temp.formulas, "NN"=NN.temp.formulas, "RF"=RF.temp.formulas)
 #names(temp.methods.formulas) <- c("GAM", "LM", "NN", "RF")
 
 ### LOAD formulas ###

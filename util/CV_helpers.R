@@ -105,7 +105,7 @@ createMethodFolder <- function(base.path, type, pred.method, method.option, form
 	folder <- pred.method
 	if(PCA) {
 		folder <- underscoreJoin(pred.method, "PCA")
-	} else if(station) {
+	} else if(station != FALSE) {
 		folder <- underscoreJoin(pred.method, paste0("Station", station))
 	}
 	method.path <- pathJoin(path, folder)
