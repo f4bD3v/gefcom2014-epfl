@@ -24,7 +24,7 @@ plotLoad <- function(tms, y, xlabel, ylabel, title, ylimits) {
   # %a - abbreviated weekday name
   seq <- tms[hour(tms)%%24==12]
   #axis.Date(1, at=seq, format=("%a %d %b"), tick=FALSE)
-  axis(1, at=seq, labels=format(seq, "%a %d %b"), cex.axis=.9)
+  axis(1, at=seq, labels=format(seq, "%a %b %y"), cex.axis=.9)
 }
 
 plotTraining <- function(tms, target, fit, residuals, xlabel, ylabel, title) {
@@ -55,13 +55,21 @@ plotPredictionResiduals <- function(tms, target, fit, residuals, chunks, xlabel,
   length.chunk <- length(residuals.chunks)
 
   for(k in 1:chunks) {
-    plot(fit.chunks[[k]] ~ tms.chunks[[k]], col="red", type="l", ylim=ylimits, xlab=xlabel, ylab=ylabel, main=title)  
+    m <- month(tms.chunks[[k]][1])
+    mabb <- format(tms.chunks[[k]][1], "%b") 
+    y <- year(tms.chunks[[k]][1])
+    plot(fit.chunks[[k]] ~ tms.chunks[[k]], col="red", type="l", ylim=ylimits, xlab=paste0(mabb, " ", y), ylab=ylabel, main=title, xaxt="n")  
     # or, only plot for indices in q.seq
     #lines(rep(mean(residuals)+offset, length(tms.chunks[[k]])) ~ tms.chunks[[k]], col="blue", type="l")
     #lines(residuals.chunks[[k]]+offset ~ tms.chunks[[k]], col="red", type="l")
     # lw - line width
     lines(target.chunks[[k]] ~ tms.chunks[[k]], col="black", type="l")
-    axis.Date(1, at=tms.chunks[[k]][mday(tms.chunks[[k]])%%7==1], format="%d-%m-%Y")
+    #axis.Date(1, at=tms.chunks[[k]][mday(tms.chunks[[k]])%%7==1], format="%d-%m-%Y")
+    #seq <- tms.chunks[[k]][mday(tms.chunks[[k]])%%7==1]
+    seq <- seq(tms.chunks[[k]][12], tms.chunks[[k]][length(tms.chunks[[k]])], by='days')# tms[hour(tms)%%(24*365)==3]
+    print(length(seq))
+    #axis.Date(1, at=seq, format=("%a %d %b"), tick=FALSE)
+    axis(1, at=seq, labels=format(seq,  "%a %d"), cex.axis=.7)
   }
 }
 

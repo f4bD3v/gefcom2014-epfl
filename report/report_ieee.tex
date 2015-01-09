@@ -480,6 +480,24 @@ using model point predictions as the mean.
 \section{Analysis}
 What combination of features and models for temperature and load provide us with a good prediction accuracy with respect to Gefcom leaderboard?
 
+Structure analysis part to go
+TODO:
+\begin{itemize}
+\item temperature CV bugS fixed
+\item rerun temperature models
+\item decide over effect of DLAG $\rightarrow$ effect on load models
+\item choose temp method with best results, if similar results use one combination from every set
+\item create additional droplets with 8 cores $\rightarrow$ install R, packages c("randomForest", "nnet", "mgcv"), git, htop $\rightarrow$ clone repository $\rightarrow$ rsync temperature data (DO NOT CREATE INSTANCE FEATURES DURING CV - checked)
+\item run load LM with temperature PCA and Station1 of best model
+\item test effect of different daytypes with GAM or LM?
+\item if the two preceding cannot be tested before lunch, run all GAM, RF, NN models 
+\item improve plotting, create residual plots, quantile plots etc. in loop
+\item interprete results and create plots
+\item write literature review (GAMs, Random Forest, NN (blackbox))
+\item write conclusion
+\end{itemize}
+
+
 predtrain vs no pred train (GAM: LoadFormula 1, tempFormula 1)
 $\rightarrow: weekly predtrain has better score, but only one position on average$
 

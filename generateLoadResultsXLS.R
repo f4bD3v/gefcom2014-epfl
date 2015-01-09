@@ -3,6 +3,12 @@ require('XLConnect')
 require('methods')
 # http://stackoverflow.com/questions/17623697/how-can-i-automate-data-frame-naming-in-r
 
+convert.magic <- function(obj, type){
+    FUN1 <- switch(type, character = as.character, numeric = as.numeric, factor = as.factor)
+    out <- lapply(obj, FUN1)
+    as.data.frame(out)
+}
+
 sheetNameFromAttr <- function(df.attr, pred.train) {
 	sheet.name <- ''
 	tempm <- df.attr$temp_method
@@ -12,7 +18,7 @@ sheetNameFromAttr <- function(df.attr, pred.train) {
 	} else {
 		tempm.opt <- df.attr$temp_method_option
 		formula.i <- df.attr$temp_method_formula_index
-		if(tempm == tempm.opt) {
+		if(tempm != tempm.opt) {
 			sheet.name <- paste(sheet.name, tempm.opt, sep="_")
 			sheet.name <- gsub('hidden-units', 'hu', sheet.name)
 			sheet.name <- gsub('ntrees', 'nt', sheet.name)
@@ -77,6 +83,15 @@ createTempSheet <- function(wb, file, df, pred.train) {
 	temp.head.df <- createTempHeader(df.attr)
 	writeWorksheet(wb, data=temp.head.df, startRow=5, startCol=2, sheet=sheet.name, header=TRUE, rownames=NULL)
 
+    print(typeof(temp.head.df[,3][1]))
+    
+    #print(typeof(df[,1][1]))
+    #print(typeof(df[,5][1]))
+    #print(sapply(df, mode))
+    #print(sapply(df, class))
+    df[, c(4:length(df))] <- convert.magic(df[, c(4:length(df))], "numeric") 
+    #print(sapply(df, class))
+    #class(df) <- "numeric"
 	writeWorksheet(wb, data=df, startRow=8, startCol=2, sheet=sheet.name, header=TRUE, rownames=NULL)
 }
 
@@ -90,7 +105,12 @@ createMethodOptionXLS <- function(method, option, path, meth.dir) {
 		ntemp <- paste(horizons[h], "temp", sep="-")
 		if(option != FALSE) wb.name <- paste(method, option, formula, ntemp, sep="_") else wb.name <- paste(method, formula, ntemp, sep="_")
 		wb.fn <- paste(meth.dir, paste0(wb.name, '.xlsx'), sep="/")
+        if (file.exists(wb.fn)) file.remove(wb.fn)
 		wb <- loadWorkbook(wb.fn, create = TRUE)
+        #setStyleAction(wb, XLC$"STYLE_ACTION.DATATYPE")
+        #cs = createCellStyle(wb, name = "myNumStyle")
+        #setDataFormat(cs, format = "0.0000")
+        #setCellStyleForType(wb, style = cs, type = XLC$"DATA_TYPE.NUMERIC")
 		temp.dirs <- list.dirs(scores.path, full.names = TRUE, recursive=FALSE)
 		for(temp.dir in temp.dirs) {
 			# get only comparison boards

@@ -1,5 +1,5 @@
 ### GEFCOM PROJECT CONFIG ###
-source("~/gefcom2014-epfl/util/date_helpers.R")
+source("~/github_repos/gefcom2014-epfl/util/date_helpers.R")
 
 #** SET FIRST AND LAST DATES OF TRAINING SET **#
 first.dt <- as.POSIXct("01/01/2001 01:00", format="%m/%d/%Y %H:%M", tz="EST")

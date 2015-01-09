@@ -3,6 +3,12 @@ require('XLConnect')
 require('methods')
 # http://stackoverflow.com/questions/17623697/how-can-i-automate-data-frame-naming-in-r
 
+convert.magic <- function(obj, type){
+    FUN1 <- switch(type, character = as.character, numeric = as.numeric, factor = as.factor)
+    out <- lapply(obj, FUN1)
+    as.data.frame(out)
+}
+
 sheetNameFromAttr <- function(df.attr, method) {
 	sheet.name <- ''
 	tempm <- method 
@@ -13,8 +19,8 @@ sheetNameFromAttr <- function(df.attr, method) {
 	} else {
 		tempm.opt <- df.attr$option
 		print(tempm.opt)
-		formula.i <- df.attr$temp_formula_index
-		if(tempm == tempm.opt) {
+		formula.i <- df.attr$formula_index
+		if(tempm != tempm.opt) {
 			sheet.name <- paste(sheet.name, tempm.opt, sep="_")
 			sheet.name <- gsub('hidden-units', 'hu', sheet.name)
 			sheet.name <- gsub('ntrees', 'nt', sheet.name)
@@ -70,12 +76,16 @@ createTempSheet <- function(wb, path, method) {
 	temp.head.df <- createTempHeader(df.attr, method)
 	writeWorksheet(wb, data=temp.head.df, startRow=2, startCol=2, sheet=sheet.name, header=TRUE, rownames=NULL)
 
-	writeWorksheet(wb, data=df, startRow=5, startCol=2, sheet=sheet.name, header=TRUE, rownames=NULL)
+    df[, c(3:length(df))] <- convert.magic(df[, c(3:length(df))], "numeric") 
+    df <- df[c((nrow(df)-15):nrow(df)),]
+    print(tail(df))
+	writeWorksheet(wb, data=df, startRow=5, startCol=1, sheet=sheet.name, header=TRUE, rownames=row.names(df))
 }
 
 createMethodOptionXLS <- function(method, meth.dir, opt.dirs) {
 	wb.fn <- paste0(method, '.xlsx')
 	print(wb.fn)
+    if (file.exists(wb.fn)) file.remove(wb.fn)
 	wb <- loadWorkbook(wb.fn, create = TRUE)
 	if(grepl("(TRUE|MEAN)", method)) {
 		return()
