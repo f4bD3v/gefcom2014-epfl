@@ -2,7 +2,6 @@
 
 LM.temp.formulas <- list("DLAG + WLAG52 + TOY + HOUR",
                        "WLAG52 + TOY + HOUR",
-                       "DLAG + WLAG52 + HOUR",
                        "DLAG + WLAG52 + HOUR")
 
 # mean - is direct average over yearly lags, no model involved
@@ -21,10 +20,12 @@ GAM.temp.formulas <-list(#"s(LAGM)",
                       "s(DLAG, by=MONTH, k=24) + s(WLAG52, k=24) + s(TOY, k=52) + s(HOUR, k=24)") # no need 5
 
 NN.temp.formulas <- list("DLAG + WLAG52 + TOY + HOUR",
-                       "WLAG52 + TOY + HOUR")
+                       "WLAG52 + TOY + HOUR",
+                       "DLAG + WLAG52 + HOUR")
 
 RF.temp.formulas <- list("DLAG + WLAG52 + TOY + HOUR",
-                       "WLAG52 + TOY + HOUR")
+                       "WLAG52 + TOY + HOUR",
+                       "DLAG + WLAG52 + HOUR")
 
 temp.methods.formulas <- list("GAM"=GAM.temp.formulas, "LM"=LM.temp.formulas, "NN"=NN.temp.formulas, "RF"=RF.temp.formulas)
 #names(temp.methods.formulas) <- c("GAM", "LM", "NN", "RF")

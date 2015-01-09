@@ -245,7 +245,7 @@ temp.method.formulas <- list.of.lists[[4]]
 load.method.formula <- load.methods.formulas[[load.method]][[load.formula]]
 print(temp.method.options)
 
-test.month.len <- 1
+#test.month.len <- 1
 
 for(i in 1:length(temp.method.options)) {
 	curr.temp.method.option <- temp.method.options[[i]]

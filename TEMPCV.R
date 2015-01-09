@@ -244,6 +244,7 @@ for(j in 1:pred.run.len) {
 		# features, train.start, pred.start, lag.horizon, train.len, pred.horizon, htype)
 		print(paste0("addedmonths ", addMonths(train.start, train.len)))
 		
+		#if(h==1) 
 		train.features <- getFeatures(temp.features, train.start, lag, train.len, 2)
 		#print(head(train.features), 1)
 		#print(tail(train.features), 1)
@@ -264,28 +265,20 @@ for(j in 1:pred.run.len) {
 		index2 <- which(temp.features$HASH==second, arr.ind=TRUE)
 
 		#** CREATE & SAVE LOAD MODEL **#
+		#if(h==1) {
 		if(method == "LM") {
 			#print(head(train.features))
 			train.result <- trainTempModelFormulaLM(train.features[,-1], method.formula, train.start)
-			temp.model <- train.result[["model"]]  
-			fit <- predict.lm(temp.model, test.features[, -(1:2)])
 		} else if(method == "GAM") {
 			train.result <- trainTempModelFormulaGAM(train.features[,-1], method.formula, train.start, gamma)
-			temp.model <- train.result[["model"]]  
-			fit <- predict.gam(temp.model, test.features[, -(1:2)])
 		} else if(method == "NN") {
-			print(method.formula)
-			print(hidden.units)
 			train.result <- trainTempModelFormulaNN(train.features[,-1], method.formula, train.start, hidden.units)
-			temp.model <- train.result[["model"]]  
-			fit <- predict(temp.model, test.features[, -(1:2)])
 		} else if(method == "RF") {
-			print(method.formula)
-			print(ntrees)
 			train.result <- trainTempModelFormulaRF(train.features[,-1], method.formula, train.start, ntrees)
-			temp.model <- train.result[["model"]]  
-			fit <- predict(temp.model, test.features[, -(1:2)])
 		}
+		#}
+		temp.model <- train.result[["model"]]  
+		train.residuals <- train.result[["residuals"]]
 		target <- temp.features[index1:index2, 2]
 		if(h==1) {
 			temp.model.fn <- pathJoin(model.instances.path, extensionJoin(paste("model", "instance", j, "monthly", pred.type, sep="_"), "txt"))
@@ -294,7 +287,15 @@ for(j in 1:pred.run.len) {
 		}
 		capture.output(summary(temp.model), file=temp.model.fn)
 
-		train.residuals <- train.result[["residuals"]]
+		if(method == "LM") {
+			fit <- predict.lm(temp.model, test.features[, -(1:2)])
+		} else if(method == "GAM") {
+			fit <- predict.gam(temp.model, test.features[, -(1:2)])
+		} else if(method == "NN") {
+			fit <- predict(temp.model, test.features[, -(1:2)])
+		} else if(method == "RF") {
+			fit <- predict(temp.model, test.features[, -(1:2)])
+		}
 		test.quantiles <- createPredQuantiles(fit, train.residuals)
 			
 		fit <- data.frame(TMS=test.dt.seq, FIT=fit, TARGET=target, HASH=hashDtYear(test.dt.seq))
@@ -505,7 +506,7 @@ cat("\n", file = weekly.scores.path, append = TRUE)
 appendTableToFile(comparison.board, monthly.scores.path)
 cat("\n", file = monthly.scores.path, append = TRUE)
 
-print(head(comparison.board))
+print(tail(comparison.board))
 
 
 if(pred.train) {
