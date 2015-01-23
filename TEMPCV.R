@@ -353,6 +353,8 @@ for(j in 1:pred.run.len) {
 
 		tms.row <- cbind(TRAIN.TMS=as.character(train.start), TEST.TMS=as.character(pred.start))
 		err.row <- cbind(do.call(cbind.data.frame, err.scores), PINBALL=err.pinball)
+        if(h > 1) err.row <- cbind(err.row, WEEK=rep(h-1, length(err.pinball)))
+        print(err.row)
 		res.row <- cbind(tms.row, err.row)
 		cat("h ", h, sep="\n")
 
@@ -362,6 +364,7 @@ for(j in 1:pred.run.len) {
 			rest.pred.start <- incrementDt(pred.start, 4, 1)
 			tms.row <- cbind(TRAIN.TMS=as.character(train.start), TEST.TMS=as.character(rest.pred.start))
 			err.row <- cbind(do.call(cbind.data.frame, rest.err.scores), PINBALL=rest.err.pinball)
+            if(h > 1) err.row <- cbind(err.row, WEEK=rep(5, length(rest.err.pinball)))
 			res.row <- cbind(tms.row, err.row)
 			cat("length loop.vars", length(loop.vars), sep="\n")
 			hp <- h + 1
@@ -399,6 +402,7 @@ for(j in 1:pred.run.len) {
 	}
 	#quit()
 }
+print(head(res))
 
 temp.res[[1]] <- monthly.temp.res
 temp.res[[2]] <- weekly.temp.res
@@ -409,12 +413,12 @@ position.board <- cbind(MAPE=res[[1]]$MAPE, PINBALL=res[[1]]$PINBALL)
 dates <- res[[1]][1:(nrow(res[[1]])), c(1,2)]
 position.board <- cbind(dates, position.board)
 row.names(position.board) <- c(1:pred.run.len)#, "MODEL CV MEAN")
-print(position.board)
 
 score.board <- list()
 for(h in 1:(length(loop.vars)+1)) {
 	res.last.row <- cbind(TRAIN.TMS=as.character(load.train.start.dt), TEST.TMS=as.character(last.test.dt), RMSE=mean(res[[h]]$RMSE), MAE=mean(res[[h]]$MAE), MAPE=mean(res[[h]]$MAPE), PINBALL=mean(res[[h]]$PINBALL))
-	score.board[[h]] <- rbind(res[[h]], res.last.row)
+	score.board[[h]] <- rbind(res[[h]][,1:(ncol(res[[h]])-1)], res.last.row)
+    print(head(score.board[[h]]))
 	row.names(score.board[[h]]) <- c(c(1:pred.run.len), "MODEL CV MEAN")
 	if (h==1) {
   		appendTableToFile(score.board[[h]], monthly.scores.path)
@@ -506,7 +510,7 @@ cat("\n", file = weekly.scores.path, append = TRUE)
 appendTableToFile(comparison.board, monthly.scores.path)
 cat("\n", file = monthly.scores.path, append = TRUE)
 
-print(tail(comparison.board))
+print(head(comparison.board))
 
 
 if(pred.train) {
