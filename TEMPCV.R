@@ -299,6 +299,7 @@ for(j in 1:pred.run.len) {
 		test.quantiles <- createPredQuantiles(fit, train.residuals)
 			
 		fit <- data.frame(TMS=test.dt.seq, FIT=fit, TARGET=target, HASH=hashDtYear(test.dt.seq))
+		if(h > 1) fit <- cbind(fit, WEEK=rep(h-1, nrow(fit)))
 		pred.temp <- fit 
 
 		temp.res.row <- pred.temp
@@ -310,6 +311,7 @@ for(j in 1:pred.run.len) {
 				restl <- TRUE
 				rest.days <- c(first.rest:nrow(temp.res.row))
 				rest <- temp.res.row[rest.days,]
+				rest <- cbind(rest, WEEK=rep(5, length(rest.days)))
 			}
 		} else {
 			if (j == 1 && h==2) weekly.temp.res <- temp.res.row else weekly.temp.res <- rbind(weekly.temp.res, temp.res.row)

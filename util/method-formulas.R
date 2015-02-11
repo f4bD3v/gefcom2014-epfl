@@ -2,7 +2,8 @@
 
 LM.temp.formulas <- list("DLAG + WLAG52 + TOY + HOUR",
                        "WLAG52 + TOY + HOUR",
-                       "DLAG + WLAG52 + HOUR")
+                       "DLAG + WLAG52 + HOUR",
+                       "WLAG52")
 
 # mean - is direct average over yearly lags, no model involved
 GAM.temp.formulas <-list(#"s(LAGM)",
@@ -37,7 +38,9 @@ LM.load.formulas <- list("CTEMP + DAYT + HOUR + TOY + WLAG52 + DLAG",
                         "CTEMP + DAYT + HOUR + TOY + WLAG52",
 						"DAYT + HOUR + TOY + WLAG52 + DLAG",
                         "CTEMP + SDAYT + HOUR + TOY + WLAG52 + DLAG",
-                        "CTEMP + WDAYT + HOUR + TOY + WLAG52 + DLAG")
+                        "CTEMP + WDAYT + HOUR + TOY + WLAG52 + DLAG",
+						"CTEMP + HOUR + TOY + WLAG52 + DLAG",
+						"CTEMP + WLAG52 + DLAG")
 
 GAM.load.formulas <- list("s(CTEMP, k=24) + DAYT + s(HOUR, by=DAYT, k=24) + s(TOY, k=52) + s(DLAG, TOY, k=52) + s(WLAG52, k=24)", # temp
                    	"DAYT + s(HOUR, by=DAYT, k=24) + s(TOY, k=52) + s(DLAG, TOY, k=52) + s(WLAG52, k=24)", # no temp
@@ -46,7 +49,8 @@ GAM.load.formulas <- list("s(CTEMP, k=24) + DAYT + s(HOUR, by=DAYT, k=24) + s(TO
 					"s(CTEMP, HOUR, k=24) + SDAYT + s(HOUR, by=SDAYT, k=24) + s(TOY, k=52) + s(DLAG, TOY, k=52) + s(WLAG52, k=24)", # temp by hour - different daytype
 					"s(CTEMP, HOUR, k=24) + WDAYT + s(HOUR, by=WDAYT, k=24) + s(TOY, k=52) + s(DLAG, TOY, k=52) + s(WLAG52, k=24)", # temp by hour - different daytype
                    	"s(CTEMP, HOUR, k=24) + DAYT + s(HOUR, by=DAYT, k=24) + s(TOY, k=52) + s(DLAG, TOY, k=52) + s(WLAG52, k=24) + s(MTL7D, k=24) + s(MAXT24H, k=52) + s(MINT24H, k=52) + s(TM24H, k=52) + s(TM48H, k=52) + s(TM2H) + s(TM1H)",
-                   	"s(CTEMP, HOUR, k=24) + DAYT + s(HOUR, by=DAYT, k=24) + s(TOY, k=52) + s(WLAG52, k=24) + s(MTL7D, k=24) + s(MAXT24H, k=52) + s(MINT24H, k=52) + s(TM24H, k=52) + s(TM48H, k=52) + s(TM2H) + s(TM1H)")
+					"s(CTEMP, HOUR, k=24) + DAYT + s(HOUR, by=DAYT, k=24) + s(TOY, k=52) + s(WLAG52, k=24) + s(MTL7D, k=24) + s(MAXT24H, k=52) + s(MINT24H, k=52) + s(TM24H, k=52) + s(TM48H, k=52) + s(TM2H) + s(TM1H)",
+					"s(CTEMP, HOUR, k=24) + s(HOUR, k=24) + s(TOY, k=52) + s(DLAG, TOY, k=52) + s(WLAG52, k=24)") # no DAYT 
                    	# during weekends and certain hours temperature more likely to affect demand: s(CTEMP, HOUR, k=24) + DAYT + s(HOUR, by=DAYT, k=24) + s(TOY, k=52) + s(DLAG, TOY, k=52) + s(WLAG52, k=24)", # temp by hour 
 
 NN.load.formulas <- list("CTEMP + DAYT + HOUR + TOY + WLAG52 + DLAG",
@@ -59,7 +63,10 @@ RF.load.formulas <- list("CTEMP + DAYT + HOUR + TOY + WLAG52 + DLAG",
                         "CTEMP + DAYT + HOUR + TOY + WLAG52",
 						"DAYT + HOUR + TOY + WLAG52 + DLAG",
                         "CTEMP + SDAYT + HOUR + TOY + WLAG52 + DLAG",
-                        "CTEMP + WDAYT + HOUR + TOY + WLAG52 + DLAG")
+                        "CTEMP + WDAYT + HOUR + TOY + WLAG52 + DLAG",
+						"CTEMP + HOUR + TOY + WLAG52 + DLAG",
+						"CTEMP + HOUR + TOY + WLAG52 + DLAG + MTL7D + MAXT24H + MINT24H + TM24H + TM48H + TM2H + TM1H",
+						"CTEMP + HOUR + TOY + WLAG52 + DLAG + MTL7D + MAXT24H + MINT24H + TM24H + TM48H + TM2H + TM1H")
 
 load.methods.formulas <- list(GAM=GAM.load.formulas, LM=LM.load.formulas, NN=NN.load.formulas, RF=RF.load.formulas)
 names(load.methods.formulas) <- c("GAM", "LM", "NN", "RF")
