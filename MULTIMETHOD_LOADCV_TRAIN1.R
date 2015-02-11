@@ -426,6 +426,7 @@ for(i in 1:length(temp.method.options)) {
 						load.fit <- predict(load.model, load.test.features[, -(1:2)])
 						len.fit <- length(load.fit)
 					}
+					if(h > 1) load.fit <- cbind(load.fit, MONTH=rep(h-1, len.fit))
 
 					#** USE TRAINING RESIDUALS TO COMPUTE PREDICTION QUANTILES **#
 					test.quantiles <- createPredQuantiles(load.fit, train.residuals)
@@ -464,6 +465,7 @@ for(i in 1:length(temp.method.options)) {
 							restl <- TRUE
 							rest.days <- c(first.rest:nrow(load.res.row))
 							rest <- load.res.row[rest.days,]
+							rest <- cbind(rest, MONTH=rep(5, length(rest.days)))
 						}
 						attr(load.res.row, 'htype') <- htypeToString(htype)
 						attr(load.res.row, 'horizon') <- test.horizon 
