@@ -1,0 +1,9 @@
+\beamer@endinputifotherversion {3.26pt}
+\beamer@sectionintoc {1}{Introduction}{2}{0}{1}
+\beamer@sectionintoc {2}{Data}{10}{0}{2}
+\beamer@sectionintoc {3}{Features}{13}{0}{3}
+\beamer@sectionintoc {4}{Forecasting Methods}{17}{0}{4}
+\beamer@sectionintoc {5}{Quantile Forecasting}{34}{0}{5}
+\beamer@sectionintoc {6}{Error Measures}{41}{0}{6}
+\beamer@sectionintoc {7}{Method Evaluation}{51}{0}{7}
+\beamer@sectionintoc {8}{Results}{58}{0}{8}

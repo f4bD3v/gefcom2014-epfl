@@ -1,0 +1,93 @@
+% #########################################
+
+% This file provides a beamer-theme
+% for Information Processing Group (IPG) presentations 
+
+% author: Stefano Rosati
+% email: stefano.rosati@epfl.ch
+% École Polytechnique Fédérale de Lausanne, EPFL
+% August 2012
+
+% #########################################
+
+%\usetheme{CambridgeUS}
+\usetheme{Copenhagen}
+\usecolortheme{beaver}
+% remove title color
+\setbeamercolor{titlelike}{parent=structure}
+
+% define colors
+\definecolor{foreground}{RGB}{0,0,0}
+\definecolor{background}{RGB}{255,255,255}
+\definecolor{pagenb}{RGB}{210,210,210}
+\definecolor{bostonuniversityred}{rgb}{0.8, 0.0, 0.0}
+
+\setbeamercolor{normal text}{fg=foreground,bg=background}
+\setbeamercolor{itemize item}{fg=pagenb}
+
+% command shortcuts
+\newcommand{\bi}{\begin{itemize}}
+\newcommand{\ei}{\end{itemize}}
+\newcommand{\ig}{\includegraphics}
+
+%\expandafter\def\expandafter\insertshorttitle\expandafter{%
+%  \insertshorttitle\hfill%
+%  \insertframenumber\,/\,\inserttotalframenumber}
+
+
+\setbeamertemplate{footline}{%
+	\hspace*{5pt}
+	\raisebox{5pt}{
+		\makebox[\paperwidth]{
+			%\hbox{\secname}
+			\hfill
+			\makebox[40pt]{\color{pagenb}
+				\scriptsize\insertframenumber/{}\inserttotalframenumber
+			}
+		}
+	}
+	\hspace*{5pt}
+}
+
+\setbeamertemplate{itemize item}{
+	\scriptsize\raise1.25pt\hbox{
+		\donotcoloroutermaths$\blacktriangleright$
+	}
+}
+
+\setbeamertemplate{section in toc}{
+	\usebeamercolor[fg]{itemize item}%
+	\hbox{
+	\raisebox{1.6pt}{
+		\donotcoloroutermaths$\mathsmaller{\blacktriangleright}$
+	}
+	\usebeamercolor[fg]{normal text}%
+	\parbox[t]{\dimexpr\linewidth-2em}{\inserttocsection}%
+	}
+
+}
+
+%\setbeamertemplate{item projected}[square]
+\setbeamercolor{item projected}{bg=bostonuniversityred}
+
+%\setbeamerfont{section number projected}{%
+%  family=\rmfamily,series=\bfseries,size=\normalsize}
+%\setbeamercolor{section number projected}{bg=red,fg=white}
+%\setbeamertemplate{section in toc}[square]
+%\setbeamertemplate{section in toc}{\inserttocsection}
+
+
+\addtobeamertemplate{frametitle}{}{%
+\begin{textblock*}{100mm}(.85\textwidth,-0.56cm)
+\includegraphics[height=0.95cm]{EPFL_LOG_QUADRI_Red.eps}  
+\end{textblock*}}
+
+% remove navigation symbols
+\setbeamertemplate{navigation symbols}{}
+% remove headline containing progress bar
+\setbeamertemplate{headline}{}
+
+% gray-out text after pause
+\setbeamercovered{transparent}
+%\setbeamercolor{block title}{fg=black}
+%\setbeamercolor{local structure}{fg=red}

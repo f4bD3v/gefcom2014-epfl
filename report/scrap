@@ -1,0 +1,61 @@
+\begin{itemize}
+\item \sout{temperature CV bugs fixed}
+\item \sout{rerun temperature model}s $\rightarrow$ continue syncing
+\paragraph{GAM} formula 1 marginally best (monthly MAPE:12.2643299829552, weekly PINBALL: 2.238020632), not for all formulas weekly Pinball best: 2 without DLAG $\rightarrow$ whole benefit of weekly is to use DLAG, benefit of DLAG marginald for temperature, especially for week for 4 MAPE improves by 0.05 from 10.934 (f2) on average to 10.881 (f1) DLAG, by=TOY, why?. Performance on Station 1 Temperature series 0.3 pinball worse
+\paragraph{LM} for the linear model the DLAG has an effect on the weekly predictions, improving the PINBALL from 2.727 (monthly) to 2.628 (weekly) for formula 1. Without DLAG the monthly and weekly predictions are about the same, because they both use preceeding year. Worse than GAM
+\paragraph{NN}
+hidden units: 5, 10 $\rightarrow$ useless; hu-15: same performance as RF ntrees 150, Weekly pinball significantly better. But: MAPE better for 4th week than 1st week $\rightarrow$ double check res (good looks correct!)
+\paragraph{RF}
+From $ntrees=100$ to $ntrees=150$ only minimal decrease in error $\rightarrow$ do not expect significantly improved performance for $ntrees=300$ 
+$\rightarrow$: put best scoring configuration of every temperature method in one excel file and plot
+
+\item \sout{choose temp method with best results, if similar results use one combination from every set} GAM temp formula 1, NN?
+\item \sout{create additional droplets with 8 cores $\rightarrow$ install R, packages c("randomForest", "nnet", "mgcv"), git, htop} $\rightarrow$ clone repository $\rightarrow$ rsync temperature data (DO NOT CREATE INSTANCE FEATURES DURING CV - checked)
+\item \sout{figure out if there is difference between monthly and weekly training for load} $\rightarrow$ There is, just training once is slightly worse (with LM 0.2 positions on average for weekly LM temp data), but saves a lot of time! Comparison boards can be checked at: load/LM/formula\_1/LM/scores! Use these sources in report
+\item create residual plots to check if it is white noise!
+\item \sout{change loadCV script to monthly training}
+\item \sout{run load LM with temperature PCA and Station1 of best model to figure out which is best (monthly training)} WAITING FOR RESULTS
+\item test effect of different daytypes with LM (1,4,5) \& GAM (3,5,6) (monthly training) RUNNING, vs no daytype? $\rightarrow$ GAM temp formula 5 is best for weekly training, for monthly it's formula 3
+\item decide over effect of DLAG $\rightarrow$ effect on load models (GAM LOAD formula 1 vs 3)
+\item \sout{predtrain vs no predtrain (Load GAM Formula 1 Temp GAM Formula 1)} AVG Position of weekly training about half a position better with pred training., need to check weekly (RF load form 3, 1 ntree 150)
+\item \sout{temperature vs. no temperature (GAM 1 vs GAM 2)} 
+\item improve plotting, create residual plots, quantile plots etc. in loop
+\item interprete results and create plots
+\item \sout{write PCA part (or leave out if no effect or right something like we took the first principal component but did not have much effect because temperature prediction not good enough)}
+\item \sout{write literature review (GAMs, Random Forest, NN (blackbox))}
+\item \sout{write conclusion}
+\item \sout{write abstract}
+\item LOAD: one utility! Domestic + Industrial --> less nice patterns? --> less impact of holiday effect?
+\end{itemize}
+
+\subsection{Temperature Modeling}
+
+\subsubsection{Effect on Load Prediction}
+Effect of temperature on load prediction evaluated using different methods:\\
+Mean over past years (yearly lag), LM, GAM, NN, RF vs. true temperature
+
+\subsubsection{Evaluate Results of weekly vs. monthly Temperature Prediction}
+plot MAPE \& PINBALL scores for different methods over load training + CV period in a 1x2 plot of the form:\\
+monthly scores \quad weekly scores
+
+
+\subsection{Temperature Modeling}
+
+\subsubsection{Effect on Load Prediction}
+Effect of temperature on load prediction evaluated using different methods:\\
+Mean over past years (yearly lag), LM, GAM, NN, RF vs. true temperature
+
+\subsubsection{Evaluate Results of weekly vs. monthly Temperature Prediction}
+plot MAPE \& PINBALL scores for different methods over load training + CV period in a 1x2 plot of the form:\\
+monthly scores \quad weekly scores
+
+
+\subsection{Temperature Modeling}
+
+\subsubsection{Effect on Load Prediction}
+Effect of temperature on load prediction evaluated using different methods:\\
+Mean over past years (yearly lag), LM, GAM, NN, RF vs. true temperature
+
+\subsubsection{Evaluate Results of weekly vs. monthly Temperature Prediction}
+plot MAPE \& PINBALL scores for different methods over load training + CV period in a 1x2 plot of the form:\\
+monthly scores \quad weekly scores

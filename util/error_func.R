@@ -40,7 +40,7 @@ pinball <- function(fit_quantiles, target) {
     for(j in 1:length(q)) {
       qij <- fit_quantiles[i,j]
       if(y < qij) {
-        scores[i,j] <- (1-q[j])*(qij - y)
+        scores[i,j] <- (1-q[j])*(qij - y) # works because qij and y switched places
       } else {
         scores[i,j] <- q[j]*(y - qij)
       }

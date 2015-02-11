@@ -19,7 +19,8 @@ spec <- matrix(
 	'tempHiddenUnits', 'thu', 2, 'integer',# 'number of units in single hidden layer (nnet package)',
 	'tempNtrees', 'tnt', 2, 'integer',
 	'tempPCA', 'tp', 2, 'logical', # use principal component of weather stations as opposed to average
-	'tempStation', 'ts1', 2, 'integer'), # use specific weather station as opposed to principal component or average
+	'tempStation', 'ts1', 2, 'integer',
+    'trainMonthly', 'tt', 2, 'logical'), # use specific weather station as opposed to principal component or average
 byrow=TRUE, nrow=13, ncol=4);
 spec.dim=dim(spec)
 spec.opt.long=spec[,1]
@@ -110,6 +111,13 @@ if(grepl('(RF|NN)', temp.method)) {
 pred.train <- TRUE
 if(!is.null(opt$tempPredTrain)) {
     pred.train <- opt$tempPredTrain
+}
+
+train.monthly <- FALSE
+train.type <- "weekly_training"
+if(!is.null(opt$trainMonthly)) {
+    train.monthly <- TRUE
+    train.type <- "monthly_training"
 }
 ### SOURCE DEPENDENCIES ###
 source("config.R")
